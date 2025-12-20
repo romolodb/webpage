@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Event TCG - Final Perfect</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #151515; --primary: #ffd700; --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); --ultra: #e056fd; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; touch-action: pan-y; }
+
+        /* LOADING */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { font-style: italic; color: #aaa; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* AUTH */
+        .auth-container { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; z-index: 2000; background: radial-gradient(circle at center, #2c3e50 0%, #000 100%); display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .auth-box { background: var(--glass); padding: 30px; border-radius: 15px; border: 1px solid var(--border); width: 80%; max-width: 350px; backdrop-filter: blur(10px); text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.5); border: 1px solid #444; border-radius: 5px; color: white; box-sizing: border-box; }
+        button.primary-btn { width: 100%; padding: 12px; margin-top: 10px; background: var(--primary); color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .link-text { margin-top: 15px; font-size: 12px; color: #aaa; cursor: pointer; text-decoration: underline; }
+        .error-msg { color: #ff6b6b; font-size: 12px; margin-top: 10px; display: none; }
+
+        /* GAME UI */
+        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-bottom: 50px; }
+        .top-bar { width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; background: #111; border-bottom: 1px solid #333; z-index: 100; }
+        .logout-btn { background: #e74c3c; border: none; color: white; padding: 8px 15px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; }
+
+        .game-area { position: relative; width: 100%; height: 500px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-top: 20px; flex-shrink: 0; }
+        
+        #cooldown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.96); z-index: 60; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .timer-digits { font-size: 30px; font-family: monospace; color: var(--primary); margin: 20px 0; }
+        .reset-timer-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-top: 15px;}
+
+        /* PACK & ANIM */
+        .pack-container { position: relative; width: 240px; height: 360px; z-index: 10; }
+        .pack-top { position: absolute; top: 0; left: 0; width: 100%; height: 50px; background: linear-gradient(135deg, #2c5364, #203a43); border-top-left-radius: 12px; border-top-right-radius: 12px; z-index: 5; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.4s ease-in, opacity 0.3s; display: flex; align-items: center; justify-content: center; }
+        .pack-top span { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 2px; }
+        .cut-strip { position: absolute; top: 50px; left: -2px; width: calc(100% + 4px); height: 16px; background: #000; z-index: 4; display: flex; align-items: center; justify-content: center; cursor: crosshair; }
+        .cut-strip::after { content: ''; width: 94%; height: 1px; border-bottom: 2px dashed #555; }
+        .pack-bottom { position: absolute; top: 66px; left: 0; width: 100%; height: 294px; background: linear-gradient(135deg, #203a43, #0f2027); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 5; display: flex; align-items: center; justify-content: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .pack-logo { font-size: 45px; font-weight: 900; color: white; transform: rotate(-5deg); text-align: center; background: -webkit-linear-gradient(#fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .instruction-text { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 300px; text-align: center; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 25%, #a18cd1 50%, #fbc2eb 75%, #ff9a9e 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s linear infinite; filter: drop-shadow(0 0 8px rgba(255, 192, 203, 0.6)); z-index: 20; pointer-events: none; }
+        .pack-container.opened .pack-top { transform: translateY(-120px) rotate(-20deg) scale(0.9); opacity: 0; }
+        .pack-container.opened .cut-strip, .pack-container.opened .instruction-text { opacity: 0; transition: opacity 0.2s; }
+        #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: auto; }
+
+        /* CARDS ON STAGE */
+        .cards-stage { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 5; }
+        .card-anim { width: 150px; height: 220px; background-color: white; border-radius: 10px; position: absolute; opacity: 0; transform: scale(0.5) translateY(100px); background-size: cover; background-position: center; border: 4px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), z-index 0s; }
+        .card-anim:hover { z-index: 100 !important; transform: translate(var(--end-x), var(--end-y)) rotate(0deg) scale(1.2) !important; cursor: pointer; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+        .card-anim.rare { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
+        .card-anim.ultra { border-color: var(--ultra); box-shadow: 0 0 20px var(--ultra); }
+        .card-name { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); color: white; font-size: 12px; text-align: center; padding: 4px 0; }
+        @keyframes dealCard { 0% { opacity: 0; transform: translateY(100px) scale(0.5) rotate(0deg); } 50% { opacity: 1; transform: translateY(-50px) scale(1.1) rotate(var(--mid-rot)); } 100% { opacity: 1; transform: translate(var(--end-x), var(--end-y)) rotate(var(--end-rot)) scale(1); } }
+        .card-anim.animate-in { animation: dealCard 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+        /* ALBUM */
+        .album-section { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; margin-top: 20px; }
+        .album-title { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #777; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 25px 0 10px 0; display: flex; align-items: center; gap: 10px; }
+        .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+        
+        .album-slot { aspect-ratio: 2/3; background: rgba(255,255,255,0.05); border-radius: 5px; border: 2px dashed #444; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5; filter: grayscale(100%); position: relative; transition: all 0.3s; }
+        
+        .album-slot.owned { opacity: 1; filter: grayscale(0%); border: 2px solid #555; background-size: cover; background-position: center; cursor: pointer; }
+        .album-slot.owned:hover { transform: scale(1.05); z-index: 2; }
+        
+        .album-slot.owned.rare { border-color: var(--gold); box-shadow: 0 0 5px var(--gold); }
+        .album-slot.owned.ultra { border-color: var(--ultra); box-shadow: 0 0 10px var(--ultra); }
+        
+        /* FIX: ANIMAZIONE "APPENA TROVATA" */
+        @keyframes popPulse { 
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 
+            50% { transform: scale(1.1); box-shadow: 0 0 20px 5px var(--primary); border-color: #fff; } 
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } 
+        }
+        .album-slot.just-found { 
+            animation: popPulse 2s infinite ease-in-out !important; 
+            z-index: 10; 
+            border-color: #fff !important; 
+        }
+
+        .count-badge { position: absolute; top: -5px; right: -5px; background: var(--gold); color: black; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; justify-content: center; align-items: center; }
+
+        /* MODAL */
+        #card-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { position: relative; width: 300px; height: 440px; background: #fff; border-radius: 15px; background-size: cover; background-position: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); transform: scale(0.8); animation: popIn 0.3s forwards; border: 5px solid white; }
+        .modal-content.rare { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
+        .modal-content.ultra { border-color: var(--ultra); box-shadow: 0 0 40px var(--ultra); }
+        @keyframes popIn { to { transform: scale(1); } }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 4001; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        .flash { position: fixed; top:0; left:0; width:100%; height:100%; background: white; opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.2s; }
+        #reload-btn { padding: 10px 20px; background: var(--primary); border:none; color: black; font-weight: bold; border-radius: 20px; cursor: pointer; display: none; position: absolute; bottom: 20px; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p id="loading-text">Connessione...</p>
+    </div>
+
+    <div id="card-modal" onclick="closeModal()">
+        <div class="close-modal">&times;</div>
+        <div class="modal-content" id="modal-card-visual"></div>
+    </div>
+
+    <div id="auth-view" class="auth-container">
+        <div id="login-form" class="auth-box">
+            <h2>ACCEDI</h2>
+            <input type="email" id="l-email" placeholder="Email">
+            <input type="password" id="l-password" placeholder="Password">
+            <div class="error-msg" id="l-error"></div>
+            <button class="primary-btn" onclick="handleLogin()">Entra</button>
+            <div class="link-text" onclick="toggleAuthMode()">Registrati</div>
+        </div>
+        <div id="register-form" class="auth-box" style="display:none;">
+            <h2>REGISTRATI</h2>
+            <input type="email" id="r-email" placeholder="Email">
+            <input type="password" id="r-password" placeholder="Password">
+            <div class="error-msg" id="r-error"></div>
+            <button class="primary-btn" onclick="handleRegister()">Crea Account</button>
+            <div class="link-text" onclick="toggleAuthMode()">Torna al Login</div>
+        </div>
+    </div>
+
+    <div id="game-view">
+        <div class="top-bar">
+            <span id="user-email-display" style="font-size:12px; color:#aaa;">...</span>
+            <button class="logout-btn" onclick="handleLogout()">ESCI</button>
+        </div>
+
+        <div class="game-area">
+            <div id="cooldown-overlay">
+                <h2>Torna più tardi!</h2>
+                <div class="timer-digits" id="timer-display">--:--:--</div>
+                <button class="reset-timer-btn" onclick="debugResetTimer()">[BETA] Apri subito</button>
+            </div>
+
+            <div class="flash" id="flash"></div>
+            <canvas id="particle-canvas"></canvas>
+
+            <div class="pack-container" id="pack">
+                <div class="instruction-text">Scorri per aprire</div>
+                <div class="pack-top"><span>EVENT PACK</span></div>
+                <div class="cut-strip" id="cut-strip"></div>
+                <div class="pack-bottom"><div class="pack-logo">PARTY<br>TIME</div></div>
+            </div>
+
+            <div class="cards-stage" id="cards-stage"></div>
+            <button id="reload-btn" onclick="location.reload()">Aggiorna</button>
+        </div>
+
+        <div class="album-section">
+            <h3 style="border-bottom:1px solid #333; padding-bottom:10px;">La tua Collezione: <span id="stats"></span></h3>
+            
+            <div class="album-title" style="color: #e056fd;">★ SPECIALI ULTRA-RARE</div>
+            <div class="album-grid" id="grid-ultra"></div>
+
+            <div class="album-title" style="color: var(--primary);">★ VIP GUESTS</div>
+            <div class="album-grid" id="grid-rare"></div>
+
+            <div class="album-title">GUESTS NORMALI</div>
+            <div class="album-grid" id="grid-common"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qyefvstvojrbfmungcvq.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_i7B_M08U-9rIsTQKE-8SpA_BMda_fnk'; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- CARTE CONFIG (15+15+3) ---
+        const ALL_CARDS = [];
+        // 1-15 Normali
+        for(let i=1; i<=15; i++) {
+            ALL_CARDS.push({ id: i, name: `Invitato ${i}`, type: 'common', img: `https://via.placeholder.com/200/3498db/fff?text=${i}` });
+        }
+        // 16-30 VIP
+        for(let i=1; i<=15; i++) {
+            ALL_CARDS.push({ id: i+15, name: `VIP Guest ${i}`, type: 'rare', img: `https://via.placeholder.com/200/f1c40f/fff?text=VIP-${i}` });
+        }
+        // 31-33 Ultra
+        for(let i=1; i<=3; i++) {
+            ALL_CARDS.push({ id: i+30, name: `SPECIAL ${i}`, type: 'ultra', img: `https://via.placeholder.com/200/e056fd/fff?text=SP-${i}` });
+        }
+
+        let currentUser = null;
+        let userProfile = null;
+        let isAppInitialized = false;
+
+        // --- LOADING ---
+        const phrases = ["...arracquo la pelle dell'urzo...", "...attacco i birri a gliu martiegl'...", "...ci siamo quasi."];
+        let pIdx = 0;
+        setInterval(() => { if(document.getElementById('loading-screen').style.display !== 'none') document.getElementById('loading-text').innerText = phrases[pIdx++ % phrases.length]; }, 2000);
+
+        // --- STARTUP ---
+        checkSession();
+        async function checkSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('user-email-display').innerText = currentUser.email;
+                await loadDataWithTimeout();
+            } else {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('auth-view').style.display = 'flex';
+                setupAuthListener();
+            }
+        }
+
+        function setupAuthListener() {
+            _supabase.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session && !isAppInitialized) {
+                    currentUser = session.user;
+                    document.getElementById('user-email-display').innerText = currentUser.email;
+                    document.getElementById('auth-view').style.display = 'none';
+                    document.getElementById('loading-screen').style.display = 'flex';
+                    await loadDataWithTimeout();
+                } else if (event === 'SIGNED_OUT') {
+                    window.location.reload();
+                }
+            });
+        }
+
+        async function loadDataWithTimeout() {
+            if (isAppInitialized) return; isAppInitialized = true;
+            document.getElementById('loading-screen').style.display = 'flex';
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout DB")), 10000));
+            const dataLoad = _loadProfileInternal();
+            try {
+                await Promise.race([dataLoad, timeout]);
+                document.getElementById('game-view').style.display = 'flex';
+                document.getElementById('loading-screen').style.display = 'none';
+                resize(); renderAlbum(); checkCooldown();
+            } catch (e) {
+                console.error(e); alert("Server lento. Riprova."); location.reload();
+            }
+        }
+
+        async function _loadProfileInternal() {
+            let { data, error } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+            if (error) throw error;
+            if (!data) {
+                const { error: insErr } = await _supabase.from('profiles').insert([{ id: currentUser.id, collection: [] }]);
+                if (insErr) throw insErr;
+                userProfile = { collection: [], last_opened_at: null };
+            } else { userProfile = data; }
+        }
+
+        // --- AUTH ---
+        function toggleAuthMode() {
+            const l=document.getElementById('login-form'), r=document.getElementById('register-form');
+            if(getComputedStyle(l).display!=='none'){l.style.display='none';r.style.display='block';}else{l.style.display='block';r.style.display='none';}
+        }
+        async function handleLogin() {
+            document.getElementById('loading-screen').style.display='flex';
+            const { error } = await _supabase.auth.signInWithPassword({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value });
+            if(error) { document.getElementById('loading-screen').style.display='none'; document.getElementById('l-error').innerText=error.message; document.getElementById('l-error').style.display='block'; }
+        }
+        async function handleRegister() {
+            document.getElementById('loading-screen').style.display='flex';
+            const { data, error } = await _supabase.auth.signUp({ email: document.getElementById('r-email').value, password: document.getElementById('r-password').value });
+            if(error) { document.getElementById('loading-screen').style.display='none'; document.getElementById('r-error').innerText=error.message; document.getElementById('r-error').style.display='block'; }
+            else if(data.user) { await _supabase.from('profiles').insert([{ id: data.user.id, collection: [] }]); document.getElementById('loading-screen').style.display='none'; alert("Registrato!"); toggleAuthMode(); }
+        }
+        async function handleLogout() { localStorage.clear(); sessionStorage.clear(); await _supabase.auth.signOut(); window.location.reload(); }
+
+        // --- TIMER ---
+        function checkCooldown() {
+            const overlay = document.getElementById('cooldown-overlay');
+            const pack = document.getElementById('pack');
+            if (!userProfile.last_opened_at) { overlay.style.display = 'none'; pack.style.display = 'block'; return; }
+            const diff = Date.now() - new Date(userProfile.last_opened_at).getTime();
+            const cooldown = 6 * 60 * 60 * 1000;
+            if (diff < cooldown) { overlay.style.display = 'flex'; pack.style.display = 'none'; startTimer(new Date(userProfile.last_opened_at).getTime() + cooldown); }
+            else { overlay.style.display = 'none'; pack.style.display = 'block'; }
+        }
+        function startTimer(target) {
+            const int = setInterval(() => {
+                const dist = target - Date.now();
+                if(dist < 0) { clearInterval(int); location.reload(); return; }
+                const h = Math.floor((dist/(1000*60*60))%24), m = Math.floor((dist/(1000*60))%60), s = Math.floor((dist/1000)%60);
+                document.getElementById('timer-display').innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+        async function debugResetTimer() {
+            document.getElementById('loading-screen').style.display = 'flex';
+            await _supabase.from('profiles').update({ last_opened_at: null }).eq('id', currentUser.id);
+            window.location.reload();
+        }
+
+        // --- PARTICLES ---
+        const canvas=document.getElementById('particle-canvas'); const ctx=canvas.getContext('2d');
+        function resize(){ const a=document.querySelector('.game-area'); if(a.clientWidth>0){canvas.width=a.clientWidth;canvas.height=a.clientHeight;}else{canvas.width=window.innerWidth;canvas.height=500;} }
+        window.addEventListener('resize',resize); setTimeout(resize, 100);
+        let particles=[], isCutting=false, isOpened=false, cutProgress=0, lastX=0;
+        class Particle {
+            constructor(x, y) {
+                this.x=x; this.y=y; const angle=Math.random()*Math.PI*2; const speed=Math.random()*4+2;
+                this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed; this.life=1.0; this.decay=Math.random()*0.05+0.02;
+                this.hue=Math.random()<0.5?45:60; this.size=Math.random()*3+1;
+            }
+            update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.15;this.life-=this.decay;this.size*=0.95;}
+            draw(ctx){ctx.globalAlpha=this.life;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(this.x,this.y,this.size*0.5,0,Math.PI*2);ctx.fill();ctx.fillStyle=`hsl(${this.hue},100%,60%)`;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}
+        }
+        function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let i=particles.length-1;i>=0;i--){particles[i].update();particles[i].draw(ctx);if(particles[i].life<=0)particles.splice(i,1);}requestAnimationFrame(loop);}
+        loop();
+        const getPos=(e)=>{const r=canvas.getBoundingClientRect();if(r.width===0)return{x:0,y:0};let cx=e.touches?e.touches[0].clientX:e.clientX;let cy=e.touches?e.touches[0].clientY:e.clientY;return{x:cx-r.left,y:cy-r.top};};
+        const handleStart=(e)=>{if(isOpened)return;isCutting=true;lastX=getPos(e).x;}
+        const handleMove=(e)=>{if(!isCutting||isOpened)return;const p=getPos(e);for(let i=0;i<5;i++)particles.push(new Particle(p.x,p.y));if(p.x>lastX)cutProgress+=3;lastX=p.x;if(cutProgress>100)openPack();}
+        const handleEnd=()=>{isCutting=false;}
+        ['mousedown','touchstart'].forEach(e=>canvas.addEventListener(e,handleStart));['mousemove','touchmove'].forEach(e=>canvas.addEventListener(e,handleMove));['mouseup','touchend'].forEach(e=>window.addEventListener(e,handleEnd));
+
+        function openPack(){
+            if(isOpened)return; isOpened=true; canvas.style.pointerEvents='none';
+            if(navigator.vibrate)navigator.vibrate(200);
+            const rect = canvas.getBoundingClientRect(); for(let i=0;i<50;i++)particles.push(new Particle(rect.width/2,rect.height/2-50));
+            document.getElementById('pack').classList.add('opened');
+            setTimeout(()=>{document.getElementById('flash').style.opacity=1;setTimeout(()=>{document.getElementById('pack').style.display='none';document.getElementById('flash').style.opacity=0;dealCards();},200);},400);
+        }
+
+        async function dealCards(){
+            const stage=document.getElementById('cards-stage'); const isMob=window.innerWidth<600; const overlap=isMob?40:130;
+            const newIds=[];
+            for(let i=0;i<5;i++){
+                const c=ALL_CARDS[Math.floor(Math.random()*ALL_CARDS.length)]; newIds.push(c.id);
+                const el=document.createElement('div'); el.className=`card-anim ${c.type}`;
+                el.style.backgroundImage=`url('${c.img}')`; el.innerHTML=`<div class="card-name">${c.name}</div>`;
+                const ex=-((4)*overlap)/2+(i*overlap); const ey=Math.abs(i-2)*(isMob?5:15);
+                el.style.setProperty('--end-x',`${ex}px`); el.style.setProperty('--end-y',`${ey}px`);
+                el.style.setProperty('--end-rot',`${(i-2)*5}deg`); el.style.setProperty('--mid-rot',`${(Math.random()*30)-15}deg`);
+                el.style.zIndex=i; el.onclick=function(){document.querySelectorAll('.card-anim').forEach(x=>x.style.zIndex=0);this.style.zIndex=100;};
+                stage.appendChild(el); setTimeout(()=>el.classList.add('animate-in'),i*150);
+            }
+            const updated=[...(userProfile.collection||[]),...newIds];
+            userProfile.collection=updated; userProfile.last_opened_at=new Date().toISOString();
+            
+            // Renderizza con Highlight
+            renderAlbum(newIds);
+            document.getElementById('reload-btn').style.display='block';
+            await _supabase.from('profiles').update({collection:updated, last_opened_at: userProfile.last_opened_at}).eq('id',currentUser.id);
+        }
+
+        function renderAlbum(highlightIds = []) {
+            const gridCommon = document.getElementById('grid-common');
+            const gridRare = document.getElementById('grid-rare');
+            const gridUltra = document.getElementById('grid-ultra');
+            
+            gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = '';
+
+            const col = userProfile.collection || [];
+            document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`;
+
+            ALL_CARDS.forEach(c => {
+                const count = col.filter(id => id === c.id).length;
+                const el = document.createElement('div');
+                el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`;
+                
+                // Highlight nuove carte
+                if(highlightIds.includes(c.id)) {
+                    el.classList.add('just-found');
+                }
+
+                if(count > 0) {
+                    el.style.backgroundImage = `url('${c.img}')`;
+                    if(count > 1) el.innerHTML = `<div class="count-badge">${count}</div>`;
+                    // Modal click
+                    el.onclick = () => openModal(c);
+                } else {
+                    el.innerHTML = `<span class="slot-num">${c.id}</span>`;
+                }
+
+                if (c.type === 'ultra') gridUltra.appendChild(el);
+                else if (c.type === 'rare') gridRare.appendChild(el);
+                else gridCommon.appendChild(el);
+            });
+        }
+
+        // --- MODAL ---
+        function openModal(card) {
+            const m = document.getElementById('card-modal');
+            const c = document.getElementById('modal-card-visual');
+            c.style.backgroundImage = `url('${card.img}')`;
+            c.className = `modal-content ${card.type}`;
+            m.style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('card-modal').style.display='none'; }
+    </script>
+</body>
+</html>
