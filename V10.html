@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FantaPennello 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #151515; --primary: #ffd700; --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); --ultra: #e056fd; --danger: #ff4757; --success: #2ecc71; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; touch-action: pan-y; }
+
+        /* LOADING */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { font-style: italic; color: #aaa; animation: pulse 2s infinite; font-size: 16px; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* AUTH */
+        .auth-container { width: 100%; min-height: 100vh; position: fixed; top: 0; left: 0; z-index: 2000; background: radial-gradient(circle at center, #2c3e50 0%, #000 100%); display: none; flex-direction: column; justify-content: center; align-items: center; overflow-y: auto; padding: 20px 0; }
+        .auth-box { background: var(--glass); padding: 30px; border-radius: 15px; border: 1px solid var(--border); width: 85%; max-width: 380px; backdrop-filter: blur(10px); text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); margin-bottom: 20px; flex-shrink: 0; }
+        .main-title { font-size: 28px; color: var(--primary); margin-bottom: 5px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .sub-title { font-size: 18px; margin-bottom: 20px; color: #ddd; font-weight: normal; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.5); border: 1px solid #444; border-radius: 5px; color: white; box-sizing: border-box; font-size: 16px; }
+        button.primary-btn { width: 100%; padding: 12px; margin-top: 15px; background: var(--primary); color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 16px; transition: transform 0.1s; }
+        button.primary-btn:active { transform: scale(0.98); }
+        .link-text { margin-top: 25px; font-size: 14px; color: #fff; cursor: pointer; text-decoration: underline; font-weight: bold; opacity: 0.9; transition: opacity 0.2s; }
+        .link-text:hover { opacity: 1; color: var(--primary); }
+        .error-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; background: rgba(255,0,0,0.1); padding: 5px; border-radius: 4px; }
+
+        /* GAME UI LAYOUT */
+        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 70px; padding-bottom: 50px; }
+        
+        /* TOP BAR FIXED */
+        .top-bar { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; 
+            box-sizing: border-box; 
+            background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        .user-info { font-size: 10px; color: #aaa; max-width: 80px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .nav-title {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            font-weight: 900; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 1px; font-size: 18px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5); white-space: nowrap;
+        }
+        .logout-btn { 
+            background: var(--primary); border: none; color: black; 
+            padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; 
+            font-weight: bold; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-area { position: relative; width: 100%; height: 500px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-top: 10px; flex-shrink: 0; }
+        
+        #cooldown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.96); z-index: 60; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        .timer-digits { font-size: 30px; font-family: monospace; color: var(--primary); margin: 20px 0; }
+        
+        /* DIALECT TEXT */
+        .shimmer-text {
+            font-size: 24px; font-weight: 800; font-style: italic; margin: 15px 0; min-height: 60px;
+            letter-spacing: 1px; line-height: 1.3;
+            background: linear-gradient(110deg, rgba(255,255,255,0.1) 0%, rgba(255,215,0,0.8) 25%, rgba(255,255,255,1) 50%, rgba(255,215,0,0.8) 75%, rgba(255,255,255,0.1) 100%);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+            animation: shine 3s linear infinite; opacity: 1; transform: scale(1);
+            transition: opacity 0.5s ease-in-out, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* PACK & CARDS */
+        .pack-container { position: relative; width: 240px; height: 360px; z-index: 10; }
+        .pack-top { position: absolute; top: 0; left: 0; width: 100%; height: 50px; background: linear-gradient(135deg, #ffd700, #ffaa00); border-top-left-radius: 12px; border-top-right-radius: 12px; z-index: 5; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.4s ease-in, opacity 0.3s; display: flex; align-items: center; justify-content: center; }
+        .pack-top span { font-size: 14px; color: #000; letter-spacing: 1px; font-weight: bold; }
+        .cut-strip { position: absolute; top: 50px; left: -2px; width: calc(100% + 4px); height: 16px; background: #000; z-index: 4; display: flex; align-items: center; justify-content: center; cursor: crosshair; }
+        .cut-strip::after { content: ''; width: 94%; height: 1px; border-bottom: 2px dashed #555; }
+        .pack-bottom { position: absolute; top: 66px; left: 0; width: 100%; height: 294px; background: linear-gradient(135deg, #c0392b, #8e44ad); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 5; display: flex; align-items: center; justify-content: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .pack-logo { font-size: 32px; font-weight: 900; color: white; transform: rotate(-5deg); text-align: center; line-height: 1.1; text-shadow: 0 4px 0 rgba(0,0,0,0.3); background: -webkit-linear-gradient(#fff, #eee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .instruction-text { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 300px; text-align: center; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 25%, #a18cd1 50%, #fbc2eb 75%, #ff9a9e 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s linear infinite; filter: drop-shadow(0 0 8px rgba(255, 192, 203, 0.6)); z-index: 20; pointer-events: none; }
+        .pack-container.opened .pack-top { transform: translateY(-120px) rotate(-20deg) scale(0.9); opacity: 0; }
+        .pack-container.opened .cut-strip, .pack-container.opened .instruction-text { opacity: 0; transition: opacity 0.2s; }
+        #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: auto; }
+        .cards-stage { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 5; }
+        .card-anim { width: 150px; height: 220px; background-color: white; border-radius: 10px; position: absolute; opacity: 0; transform: scale(0.5) translateY(100px); background-size: cover; background-position: center; border: 4px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: auto; transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), z-index 0s; }
+        .card-anim:hover { z-index: 100 !important; transform: translate(var(--end-x), var(--end-y)) rotate(0deg) scale(1.2) !important; cursor: pointer; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+        .card-anim.rare { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
+        .card-anim.ultra { border-color: var(--ultra); box-shadow: 0 0 20px var(--ultra); }
+        .card-name { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); color: white; font-size: 12px; text-align: center; padding: 4px 0; }
+        @keyframes dealCard { 0% { opacity: 0; transform: translateY(100px) scale(0.5) rotate(0deg); } 50% { opacity: 1; transform: translateY(-50px) scale(1.1) rotate(var(--mid-rot)); } 100% { opacity: 1; transform: translate(var(--end-x), var(--end-y)) rotate(var(--end-rot)) scale(1); } }
+        .card-anim.animate-in { animation: dealCard 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+        /* SHARED COMPONENT STYLES (Rules & Squad) */
+        .accordion-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+        .accordion-trigger {
+            font-size: 16px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;
+            cursor: pointer; padding: 12px 25px; border: 1px solid var(--primary); border-radius: 20px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); transition: all 0.3s; margin-bottom: 10px; width: auto; 
+            background: linear-gradient(110deg, rgba(255,215,0,0.1) 0%, rgba(255,215,0,0.3) 50%, rgba(255,215,0,0.1) 100%);
+            background-size: 200% auto; animation: shine 3s linear infinite;
+        }
+        .accordion-trigger:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        
+        .accordion-content {
+            width: 95%; max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out;
+            background: linear-gradient(180deg, #421818 0%, #2c0b0b 100%);
+            border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .accordion-content.open { border: 1px solid #666; margin-bottom: 20px; padding-bottom: 20px; }
+        
+        .rule-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #ddd; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; text-align: left; }
+        .rule-item strong { color: var(--primary); margin-bottom: 5px; font-size: 15px; }
+        .rule-item:last-child { border-bottom: none; }
+
+        /* SQUADRA UI */
+        .squad-panel-inner { display: flex; flex-direction: column; align-items: center; width: 100%; padding-top: 15px; }
+        .budget-bar { width: 90%; background: #222; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        .budget-info { font-size: 14px; color: #aaa; }
+        .budget-val { font-size: 24px; font-weight: bold; color: var(--success); }
+        .budget-val.low { color: var(--danger); }
+        
+        .squad-grid { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
+        .squad-row { display: flex; gap: 15px; justify-content: center; }
+        
+        /* SLOT SQUADRA FISSI */
+        .squad-slot { 
+            width: 80px; height: 120px; /* DIMENSIONI FISSE */
+            background: rgba(255,255,255,0.05); border: 2px dashed #555; 
+            border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            position: relative; cursor: pointer; text-align: center; padding: 0; box-sizing: border-box;
+            background-size: cover; background-position: center;
+        }
+        .squad-slot:active { transform: scale(0.95); }
+        
+        .squad-slot.filled { border: 2px solid white; }
+        .squad-slot.filled span, .squad-slot.filled .slot-label { display: none; }
+        .squad-slot .slot-label { font-size: 8px; color: #777; text-transform: uppercase; margin-top: 5px; }
+        .squad-slot .remove-btn { position: absolute; top: -8px; right: -8px; background: red; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; box-shadow: 0 0 5px black; z-index: 5; }
+        
+        .squad-slot.rare { border-color: var(--gold); background-color: rgba(255, 215, 0, 0.05); }
+        .squad-slot.common { border-color: #3498db; background-color: rgba(52, 152, 219, 0.05); }
+        .squad-slot.ultra { border-color: var(--ultra); background-color: rgba(224, 86, 253, 0.05); }
+
+        .save-squad-btn { padding: 12px 30px; background: var(--success); color: white; border: none; border-radius: 30px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; width: 80%; opacity: 0.5; pointer-events: none; transition: opacity 0.3s; }
+        .save-squad-btn.active { opacity: 1; pointer-events: auto; box-shadow: 0 0 20px rgba(46, 204, 113, 0.5); }
+
+        /* ALBUM */
+        .album-section { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; }
+        .album-title { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #777; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 25px 0 10px 0; display: flex; align-items: center; gap: 10px; }
+        .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+        .album-slot { aspect-ratio: 2/3; background: rgba(255,255,255,0.05); border-radius: 5px; border: 2px dashed #444; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5; filter: grayscale(100%); position: relative; transition: all 0.3s; }
+        .album-slot.owned { opacity: 1; filter: grayscale(0%); border: 2px solid #555; background-size: cover; background-position: center; cursor: pointer; }
+        .album-slot.owned:hover { transform: scale(1.05); z-index: 2; }
+        .album-slot.owned.rare { border-color: var(--gold); box-shadow: 0 0 5px var(--gold); }
+        .album-slot.owned.ultra { border-color: var(--ultra); box-shadow: 0 0 10px var(--ultra); }
+        
+        @keyframes popPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 50% { transform: scale(1.1); box-shadow: 0 0 20px 5px var(--primary); border-color: #fff; } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
+        .album-slot.just-found { animation: popPulse 2s infinite ease-in-out !important; z-index: 10; border-color: #fff !important; }
+        .count-badge { position: absolute; top: -5px; right: -5px; background: var(--gold); color: black; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; justify-content: center; align-items: center; }
+
+        /* MODAL */
+        #card-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { position: relative; width: 300px; height: 440px; background: #fff; border-radius: 15px; background-size: cover; background-position: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); transform: scale(0.8); animation: popIn 0.3s forwards; border: 5px solid white; }
+        .modal-content.rare { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
+        .modal-content.ultra { border-color: var(--ultra); box-shadow: 0 0 40px var(--ultra); }
+        @keyframes popIn { to { transform: scale(1); } }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 4001; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        .flash { position: fixed; top:0; left:0; width:100%; height:100%; background: white; opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.2s; }
+        #reload-btn { padding: 10px 20px; background: var(--primary); border:none; color: black; font-weight: bold; border-radius: 20px; cursor: pointer; display: none; position: absolute; bottom: 20px; z-index: 100; box-shadow: 0 0 15px rgba(255,215,0,0.6); text-transform: uppercase; }
+
+        /* SELECTION MODAL */
+        #selection-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; justify-content:center; align-items:center; }
+        .selection-grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; /* Spazio tra le carte */
+            width: 100%; padding: 20px; box-sizing: border-box; 
+        }
+        .select-card { aspect-ratio: 2/3; background-size: cover; background-position: center; border-radius: 5px; border: 2px solid transparent; cursor: pointer; position: relative; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .select-card:active { transform: scale(0.95); }
+        .select-card-cost { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); color: var(--primary); font-size: 10px; text-align: center; font-weight: bold; padding: 2px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p id="loading-text">Connessione...</p>
+    </div>
+
+    <div id="card-modal" onclick="closeModal()">
+        <div class="close-modal">&times;</div>
+        <div class="modal-content" id="modal-card-visual"></div>
+    </div>
+
+    <div id="selection-modal">
+        <div style="width:90%; height:80%; background:#222; border-radius:15px; border:1px solid #444; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+            <div style="padding:15px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center; background:#111;">
+                <span style="font-weight:bold; color:var(--primary); font-size:14px; text-transform:uppercase;">SCEGLI PENNELLO</span>
+                <button onclick="document.getElementById('selection-modal').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div id="selection-grid" class="selection-grid" style="overflow-y:auto; flex:1;"></div>
+        </div>
+    </div>
+
+    <div id="auth-view" class="auth-container">
+        <div id="login-form" class="auth-box">
+            <h1 class="main-title">FantaPennello 2025</h1>
+            <h2 class="sub-title">ACCEDI</h2>
+            <input type="email" id="l-email" placeholder="Email">
+            <input type="password" id="l-password" placeholder="Password">
+            <div class="error-msg" id="l-error"></div>
+            <button class="primary-btn" onclick="handleLogin()">Entra</button>
+            <div class="link-text" onclick="toggleAuthMode()">Se non ti sei registrato, registrati!</div>
+        </div>
+        <div id="register-form" class="auth-box" style="display:none;">
+            <h1 class="main-title">FantaPennello 2025</h1>
+            <h2 class="sub-title">REGISTRATI</h2>
+            <input type="email" id="r-email" placeholder="Email">
+            <input type="password" id="r-password" placeholder="Password">
+            <div class="error-msg" id="r-error"></div>
+            <button class="primary-btn" onclick="handleRegister()">Crea Account</button>
+            <div class="link-text" onclick="toggleAuthMode()">Hai già un account? Accedi</div>
+        </div>
+        <div class="accordion-container">
+            <div class="accordion-trigger" onclick="toggleAccordion('rules-content-auth')">★ LE REGOLE DEL GIOCO ★</div>
+            <div id="rules-content-auth" class="accordion-content">
+                <div class="rule-item"><strong>1. Inizia l'Avventura</strong>Dopo aver creato il tuo account personale, apri la busta ogni 6 ore per trovare 5 nuovi pennelli.</div>
+                <div class="rule-item"><strong>2. Colleziona i Pennelli</strong>Cerca tutti i Pennelli 2025: Normali (Blu), FOIL (Oro) e Speciali Ultra-Rari (Viola).</div>
+                <div class="rule-item"><strong>3. FantaPennello</strong>Trova tutti i pennelli per completare l'album. <br><span style="color:#e056fd; font-weight:bold;">IMPORTANTE:</span> Per partecipare al FantaPennello potrai utilizzare ESCLUSIVAMENTE i personaggi delle carte che ti sono uscite.</div>
+                <div class="rule-item"><strong>4. Premio Finale</strong>Divertiti! Chi completa tutto l'album avrà un regalo speciale!</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-view">
+        <div class="top-bar">
+            <div class="user-info"><span id="user-email-display"></span></div>
+            <div class="nav-title">FantaPennello25</div>
+            <button class="logout-btn" onclick="handleLogout()">ESCI</button>
+        </div>
+
+        <div class="game-area">
+            <div id="cooldown-overlay">
+                <h2>Torna più tardi, intanto:</h2>
+                <div id="fun-dialect-text" class="shimmer-text">...</div>
+                <div class="timer-digits" id="timer-display">--:--:--</div>
+            </div>
+            <div class="flash" id="flash"></div>
+            <canvas id="particle-canvas"></canvas>
+            <div class="pack-container" id="pack">
+                <div class="instruction-text">Scorri per Sbustare il pennello</div>
+                <div class="pack-top"><span>tira accà!</span></div>
+                <div class="cut-strip" id="cut-strip"></div>
+                <div class="pack-bottom"><div class="pack-logo">Glie<br>Sciacqua<br>penniegl<br>2025</div></div>
+            </div>
+            <div class="cards-stage" id="cards-stage"></div>
+            <button id="reload-btn" onclick="location.reload()">Aggiorna il tuo album</button>
+        </div>
+
+        <div class="accordion-container">
+            <div class="accordion-trigger" onclick="toggleAccordion('rules-content-game')">★ LE REGOLE DEL GIOCO ★</div>
+            <div id="rules-content-game" class="accordion-content">
+                <div class="rule-item"><strong>1. Inizia l'Avventura</strong>Dopo aver creato il tuo account personale, apri la busta ogni 6 ore per trovare 5 nuovi pennelli.</div>
+                <div class="rule-item"><strong>2. Colleziona i Pennelli</strong>Cerca tutti i Pennelli 2025: Normali (Blu), FOIL (Oro) e Speciali Ultra-Rari (Viola).</div>
+                <div class="rule-item"><strong>3. FantaPennello</strong>Trova tutti i pennelli per completare l'album. <br><span style="color:#e056fd; font-weight:bold;">IMPORTANTE:</span> Per partecipare al FantaPennello potrai utilizzare ESCLUSIVAMENTE i personaggi delle carte che ti sono uscite.</div>
+                <div class="rule-item"><strong>4. Premio Finale</strong>Divertiti! Chi completa tutto l'album avrà un regalo speciale!</div>
+            </div>
+        </div>
+
+        <div class="accordion-container">
+            <div class="accordion-trigger" onclick="toggleAccordion('squad-content')">★ CREA LA TUA SQUADRA ★</div>
+            <div id="squad-content" class="accordion-content">
+                <div class="squad-panel-inner">
+                    <div class="budget-bar">
+                        <div class="budget-info">BUDGET</div>
+                        <div class="budget-val" id="budget-display">100</div>
+                    </div>
+
+                    <div class="squad-grid">
+                        <div class="squad-row">
+                            <div class="squad-slot rare" id="slot-rare" onclick="openSelection('rare')">
+                                <span style="font-size:20px;">★</span>
+                                <div class="slot-label">FOIL</div>
+                            </div>
+                        </div>
+                        <div class="squad-row">
+                            <div class="squad-slot common" id="slot-c1" onclick="openSelection('common', 1)">
+                                <span style="font-size:20px;">●</span>
+                                <div class="slot-label">NORMALE</div>
+                            </div>
+                            <div class="squad-slot common" id="slot-c2" onclick="openSelection('common', 2)">
+                                <span style="font-size:20px;">●</span>
+                                <div class="slot-label">NORMALE</div>
+                            </div>
+                        </div>
+                        <div class="squad-row">
+                            <div class="squad-slot ultra" id="slot-ultra" onclick="openSelection('ultra')">
+                                <span style="font-size:20px;">✦</span>
+                                <div class="slot-label">ULTRA (OPT)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="save-squad-btn" id="save-btn" onclick="saveSquad()">SALVA SQUADRA</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="album-section">
+            <h3 style="border-bottom:1px solid #333; padding-bottom:10px;">La tua Collezione: <span id="stats"></span></h3>
+            
+            <div class="album-title" style="color: #e056fd;">★ PENNELLI SPECIALI ULTRA RARI</div>
+            <div class="album-grid" id="grid-ultra"></div>
+
+            <div class="album-title" style="color: var(--primary);">★ PENNELLI FOIL</div>
+            <div class="album-grid" id="grid-rare"></div>
+
+            <div class="album-title">PENNELLI NORMALI</div>
+            <div class="album-grid" id="grid-common"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qyefvstvojrbfmungcvq.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_i7B_M08U-9rIsTQKE-8SpA_BMda_fnk'; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- CARTE CONFIG (IMMAGINI REALI .JPG) ---
+        const STORAGE_BASE_URL = 'https://qyefvstvojrbfmungcvq.supabase.co/storage/v1/object/public/FantaPennello/';
+
+        const ALL_CARDS = [];
+        // Costo Comuni: 10
+        for(let i=1; i<=15; i++) ALL_CARDS.push({ id: i, name: `Pennello ${i}`, type: 'common', cost: 10, img: `${STORAGE_BASE_URL}comune_${i}.jpg` });
+        // Costo Rare: 30
+        for(let i=1; i<=15; i++) ALL_CARDS.push({ id: i+15, name: `Pennello FOIL ${i}`, type: 'rare', cost: 30, img: `${STORAGE_BASE_URL}rare_${i}.jpg` });
+        // Costo Ultra: 0
+        for(let i=1; i<=3; i++) ALL_CARDS.push({ id: i+30, name: `Pennello Speciale ${i}`, type: 'ultra', cost: 0, img: `${STORAGE_BASE_URL}ultra_${i}.jpg` });
+
+        let currentUser = null;
+        let userProfile = null;
+        let isAppInitialized = false;
+        
+        // SQUAD STATE
+        let currentSquad = { rare: null, c1: null, c2: null, ultra: null };
+        let activeSlot = null; // { type, index }
+
+        // --- ACCORDION TOGGLE ---
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                content.classList.remove('open');
+            } else {
+                content.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
+        // --- SQUAD LOGIC ---
+        function renderSquadUI() {
+            let totalCost = 0;
+            const rSlot = (key, elementId) => {
+                const cardId = currentSquad[key];
+                const el = document.getElementById(elementId);
+                el.innerHTML = ''; el.classList.remove('filled'); el.style.backgroundImage = 'none';
+                if(cardId) {
+                    const card = ALL_CARDS.find(c => c.id == cardId);
+                    if(card) {
+                        el.classList.add('filled');
+                        el.style.backgroundImage = `url('${card.img}')`;
+                        el.innerHTML = `<div class="remove-btn" onclick="event.stopPropagation(); removeCard('${key}')">X</div>`;
+                        totalCost += card.cost;
+                    }
+                } else {
+                    let label = key === 'rare' ? 'FOIL' : (key === 'ultra' ? 'ULTRA (OPT)' : 'NORMALE');
+                    let icon = key === 'rare' ? '★' : (key === 'ultra' ? '✦' : '●');
+                    el.innerHTML = `<span style="font-size:20px;">${icon}</span><div class="slot-label">${label}</div>`;
+                }
+            };
+            rSlot('rare', 'slot-rare'); rSlot('c1', 'slot-c1'); rSlot('c2', 'slot-c2'); rSlot('ultra', 'slot-ultra');
+
+            const budgetDisplay = document.getElementById('budget-display');
+            const rem = 100 - totalCost;
+            budgetDisplay.innerText = rem;
+            budgetDisplay.className = `budget-val ${rem < 0 ? 'low' : ''}`;
+
+            const saveBtn = document.getElementById('save-btn');
+            const isComplete = currentSquad.rare && currentSquad.c1 && currentSquad.c2; 
+            if (isComplete && rem >= 0) saveBtn.classList.add('active');
+            else saveBtn.classList.remove('active');
+            
+            // Re-calculate height of accordion if open
+            const content = document.getElementById('squad-content');
+            if(content.classList.contains('open')) content.style.maxHeight = content.scrollHeight + "px";
+        }
+
+        function removeCard(key) { currentSquad[key] = null; renderSquadUI(); }
+
+        function openSelection(type, cIndex) {
+            activeSlot = { type, cIndex }; 
+            const modal = document.getElementById('selection-modal');
+            const grid = document.getElementById('selection-grid');
+            grid.innerHTML = '';
+
+            const ownedIds = userProfile.collection || [];
+            const candidates = ALL_CARDS.filter(c => c.type === type && ownedIds.includes(c.id));
+            const usedIds = [currentSquad.rare, currentSquad.c1, currentSquad.c2, currentSquad.ultra];
+
+            if(candidates.length === 0) {
+                grid.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px; grid-column:1/-1;">Nessuna carta di questo tipo trovata.<br>Apri più bustine!</div>';
+            } else {
+                candidates.forEach(c => {
+                    if(usedIds.includes(c.id)) return;
+                    const el = document.createElement('div');
+                    el.className = 'select-card';
+                    el.style.backgroundImage = `url('${c.img}')`;
+                    el.innerHTML = `<div class="select-card-cost">Costo: ${c.cost}</div>`;
+                    el.onclick = () => selectCard(c.id);
+                    grid.appendChild(el);
+                });
+            }
+            modal.style.display = 'flex';
+        }
+
+        function selectCard(cardId) {
+            if (activeSlot.type === 'rare') currentSquad.rare = cardId;
+            else if (activeSlot.type === 'ultra') currentSquad.ultra = cardId;
+            else if (activeSlot.type === 'common') {
+                if(activeSlot.cIndex === 1) currentSquad.c1 = cardId;
+                else currentSquad.c2 = cardId;
+            }
+            document.getElementById('selection-modal').style.display = 'none';
+            renderSquadUI();
+        }
+
+        async function saveSquad() {
+            document.getElementById('loading-screen').style.display='flex';
+            await _supabase.from('profiles').update({ squad: currentSquad }).eq('id', currentUser.id);
+            userProfile.squad = currentSquad;
+            document.getElementById('loading-screen').style.display='none';
+            toggleAccordion('squad-content');
+        }
+
+        // --- AUTH & STARTUP ---
+        const phrases = ["Arracquo la pelle dell'urzo", "Attacco i birri a gliu martiegl'", "Ci siamo quasi"];
+        let pIdx = 0; setInterval(() => { if(document.getElementById('loading-screen').style.display !== 'none') document.getElementById('loading-text').innerText = phrases[pIdx++ % phrases.length]; }, 2000);
+        const dialectPhrases = ["Attacca i birri al martello", "Assign' gliu buttiglion'", "Magnat nu begl' susamiegl", "Arracqua la pelle degl urz", "Fatti na passeggiata abbasc la piaja", "Magnt nu piezz d tiell", "Aeeeeeeee!"];
+        let dialectIdx = 0; setInterval(() => { if(document.getElementById('cooldown-overlay').style.display !== 'none') { const el = document.getElementById('fun-dialect-text'); el.style.opacity = 0; el.style.transform = "scale(0.8)"; setTimeout(() => { el.innerText = dialectPhrases[dialectIdx++ % dialectPhrases.length]; el.style.opacity = 1; el.style.transform = "scale(1)"; }, 500); } }, 4000);
+
+        checkSession();
+        async function checkSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) { currentUser = session.user; document.getElementById('user-email-display').innerText = currentUser.email; await loadDataWithTimeout(); }
+            else { document.getElementById('loading-screen').style.display = 'none'; document.getElementById('auth-view').style.display = 'flex'; setupAuthListener(); }
+        }
+        function setupAuthListener() {
+            _supabase.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session) { currentUser = session.user; document.getElementById('user-email-display').innerText = currentUser.email; document.getElementById('auth-view').style.display = 'none'; document.getElementById('loading-screen').style.display = 'flex'; await loadDataWithTimeout(); }
+                else if (event === 'SIGNED_OUT') { window.location.reload(); }
+            });
+        }
+        async function loadDataWithTimeout() {
+            document.getElementById('loading-screen').style.display = 'flex';
+            try {
+                let { data, error } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+                if (!data) { await _supabase.from('profiles').insert([{ id: currentUser.id, collection: [] }]); userProfile = { collection: [], last_opened_at: null, squad: {} }; }
+                else { userProfile = data; }
+                
+                if(userProfile.squad) currentSquad = userProfile.squad;
+                else currentSquad = { rare: null, c1: null, c2: null, ultra: null };
+
+                document.getElementById('game-view').style.display = 'flex';
+                document.getElementById('loading-screen').style.display = 'none';
+                resize(); renderAlbum(); checkCooldown(); renderSquadUI();
+            } catch (e) { console.error(e); location.reload(); }
+        }
+
+        // Functions reused directly from previous code
+        async function handleLogin() { document.getElementById('loading-screen').style.display='flex'; const { error } = await _supabase.auth.signInWithPassword({ email: document.getElementById('l-email').value, password: document.getElementById('l-password').value }); if(error) { document.getElementById('loading-screen').style.display='none'; document.getElementById('l-error').innerText=error.message; document.getElementById('l-error').style.display='block'; } }
+        async function handleRegister() { document.getElementById('loading-screen').style.display='flex'; const { data, error } = await _supabase.auth.signUp({ email: document.getElementById('r-email').value, password: document.getElementById('r-password').value }); if(error) { document.getElementById('loading-screen').style.display='none'; document.getElementById('r-error').innerText=error.message; document.getElementById('r-error').style.display='block'; } else if(data.user) { await _supabase.from('profiles').insert([{ id: data.user.id, collection: [] }]); document.getElementById('loading-screen').style.display='none'; toggleAuthMode(); } }
+        async function handleLogout() { localStorage.clear(); await _supabase.auth.signOut(); window.location.reload(); }
+        function toggleAuthMode() { const l=document.getElementById('login-form'), r=document.getElementById('register-form'); if(getComputedStyle(l).display!=='none'){l.style.display='none';r.style.display='block';}else{l.style.display='block';r.style.display='none';} }
+        function checkCooldown() { const overlay = document.getElementById('cooldown-overlay'); const pack = document.getElementById('pack'); if (!userProfile.last_opened_at) { overlay.style.display = 'none'; pack.style.display = 'block'; return; } const diff = Date.now() - new Date(userProfile.last_opened_at).getTime(); const cooldown = 10 * 1000; if (diff < cooldown) { overlay.style.display = 'flex'; pack.style.display = 'none'; startTimer(new Date(userProfile.last_opened_at).getTime() + cooldown); } else { overlay.style.display = 'none'; pack.style.display = 'block'; } }
+        function startTimer(target) { const int = setInterval(() => { const dist = target - Date.now(); if(dist < 0) { clearInterval(int); location.reload(); return; } const h = Math.floor((dist/(1000*60*60))%24), m = Math.floor((dist/(1000*60))%60), s = Math.floor((dist/1000)%60); document.getElementById('timer-display').innerText = `${h}:${m}:${s}`; }, 1000); }
+        async function debugResetTimer() { document.getElementById('loading-screen').style.display = 'flex'; await _supabase.from('profiles').update({ last_opened_at: null }).eq('id', currentUser.id); window.location.reload(); }
+        
+        // Particles & Deal
+        const canvas=document.getElementById('particle-canvas'); const ctx=canvas.getContext('2d');
+        function resize(){ const a=document.querySelector('.game-area'); if(a && a.clientWidth>0){canvas.width=a.clientWidth;canvas.height=a.clientHeight;}else{canvas.width=window.innerWidth;canvas.height=500;} }
+        window.addEventListener('resize',resize); setTimeout(resize, 100);
+        let particles=[], isCutting=false, isOpened=false, cutProgress=0, lastX=0;
+        class Particle { constructor(x, y) { this.x=x; this.y=y; const angle=Math.random()*Math.PI*2; const speed=Math.random()*4+2; this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed; this.life=1.0; this.decay=Math.random()*0.05+0.02; this.hue=Math.random()<0.5?45:60; this.size=Math.random()*3+1; } update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.15;this.life-=this.decay;this.size*=0.95;} draw(ctx){ctx.globalAlpha=this.life;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(this.x,this.y,this.size*0.5,0,Math.PI*2);ctx.fill();ctx.fillStyle=`hsl(${this.hue},100%,60%)`;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();} }
+        function loop(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let i=particles.length-1;i>=0;i--){particles[i].update();particles[i].draw(ctx);if(particles[i].life<=0)particles.splice(i,1);}requestAnimationFrame(loop);}
+        loop();
+        const getPos=(e)=>{const r=canvas.getBoundingClientRect();if(r.width===0)return{x:0,y:0};let cx=e.touches?e.touches[0].clientX:e.clientX;let cy=e.touches?e.touches[0].clientY:e.clientY;return{x:cx-r.left,y:cy-r.top};};
+        const handleStart=(e)=>{if(isOpened)return;isCutting=true;lastX=getPos(e).x;}
+        const handleMove=(e)=>{if(!isCutting||isOpened)return;const p=getPos(e);for(let i=0;i<5;i++)particles.push(new Particle(p.x,p.y));if(p.x>lastX)cutProgress+=3;lastX=p.x;if(cutProgress>100)openPack();}
+        const handleEnd=()=>{isCutting=false;}
+        ['mousedown','touchstart'].forEach(e=>canvas.addEventListener(e,handleStart));['mousemove','touchmove'].forEach(e=>canvas.addEventListener(e,handleMove));['mouseup','touchend'].forEach(e=>window.addEventListener(e,handleEnd));
+        function openPack(){ if(isOpened)return; isOpened=true; canvas.style.pointerEvents='none'; if(navigator.vibrate)navigator.vibrate(200); const rect = canvas.getBoundingClientRect(); for(let i=0;i<50;i++)particles.push(new Particle(rect.width/2,rect.height/2-50)); document.getElementById('pack').classList.add('opened'); setTimeout(()=>{document.getElementById('flash').style.opacity=1;setTimeout(()=>{document.getElementById('pack').style.display='none';document.getElementById('flash').style.opacity=0;dealCards();},200);},400); }
+        
+        async function dealCards(){ 
+            const stage=document.getElementById('cards-stage'); const isMob=window.innerWidth<600; const overlap=isMob?40:130; 
+            const commons = ALL_CARDS.filter(c => c.type === 'common'); 
+            const rares = ALL_CARDS.filter(c => c.type === 'rare'); 
+            const ultras = ALL_CARDS.filter(c => c.type === 'ultra'); 
+            const packCardsData = []; 
+            const packIdsForChecking = new Set(); 
+            
+            while (packCardsData.length < 5) { 
+                let selectedPool; const rng = Math.random() * 100; 
+                if (rng < 70) selectedPool = commons; else if (rng < 95) selectedPool = rares; else selectedPool = ultras; 
+                const randomCard = selectedPool[Math.floor(Math.random() * selectedPool.length)]; 
+                if (!packIdsForChecking.has(randomCard.id)) { 
+                    packCardsData.push(randomCard); packIdsForChecking.add(randomCard.id); 
+                } 
+            } 
+            
+            packCardsData.forEach((c, i) => { 
+                const el=document.createElement('div'); el.className=`card-anim ${c.type}`; 
+                el.style.backgroundImage=`url('${c.img}')`; el.innerHTML=`<div class="card-name">${c.name}</div>`; 
+                const ex=-((4)*overlap)/2+(i*overlap); const ey=Math.abs(i-2)*(isMob?5:15); 
+                el.style.setProperty('--end-x',`${ex}px`); el.style.setProperty('--end-y',`${ey}px`); 
+                el.style.setProperty('--end-rot',`${(i-2)*5}deg`); el.style.setProperty('--mid-rot',`${(Math.random()*30)-15}deg`); 
+                el.style.zIndex=i; 
+                el.onclick=function(){document.querySelectorAll('.card-anim').forEach(x=>x.style.zIndex=0);this.style.zIndex=100;}; 
+                stage.appendChild(el); 
+                setTimeout(()=>el.classList.add('animate-in'),i*150); 
+            }); 
+            
+            const newIds = packCardsData.map(c => c.id); 
+            const updated=[...(userProfile.collection||[]),...newIds]; 
+            userProfile.collection=updated; 
+            userProfile.last_opened_at=new Date().toISOString(); 
+            
+            // RENDERING ALBUM WITH HIGHLIGHTS
+            renderAlbum(newIds); 
+            
+            document.getElementById('reload-btn').style.display='block'; 
+            await _supabase.from('profiles').update({collection:updated, last_opened_at: userProfile.last_opened_at}).eq('id',currentUser.id); 
+        }
+
+        function renderAlbum(highlightIds = []) { 
+            const gridCommon = document.getElementById('grid-common'); 
+            const gridRare = document.getElementById('grid-rare'); 
+            const gridUltra = document.getElementById('grid-ultra'); 
+            gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; 
+            
+            const col = userProfile.collection || []; 
+            document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; 
+            
+            ALL_CARDS.forEach(c => { 
+                const count = col.filter(id => id === c.id).length; 
+                const el = document.createElement('div'); 
+                
+                // Base classes
+                el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; 
+                
+                // Add highlight if needed
+                if(highlightIds.includes(c.id)) { 
+                    el.classList.add('just-found'); 
+                } 
+                
+                if(count > 0) { 
+                    el.style.backgroundImage = `url('${c.img}')`; 
+                    if(count > 1) el.innerHTML = `<div class="count-badge">${count}</div>`; 
+                    el.onclick = () => openModal(c); 
+                } else { 
+                    el.innerHTML = `<span class="slot-num">${c.id}</span>`; 
+                } 
+                
+                if (c.type === 'ultra') gridUltra.appendChild(el); 
+                else if (c.type === 'rare') gridRare.appendChild(el); 
+                else gridCommon.appendChild(el); 
+            }); 
+        }
+
+        function openModal(card) { const m = document.getElementById('card-modal'); const c = document.getElementById('modal-card-visual'); c.style.backgroundImage = `url('${card.img}')`; c.className = `modal-content ${card.type}`; m.style.display = 'flex'; }
+        function closeModal() { document.getElementById('card-modal').style.display='none'; }
+    </script>
+</body>
+</html>
