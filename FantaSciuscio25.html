@@ -32,20 +32,17 @@
         .error-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; background: rgba(255,0,0,0.1); padding: 5px; border-radius: 4px; }
 
         /* GAME UI LAYOUT */
-        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 70px; padding-bottom: 50px; }
+        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 60px; padding-bottom: 50px; }
         
         /* TOP BAR FIXED */
         .top-bar { 
             position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 15px; display: flex; justify-content: flex-end; align-items: center; 
             box-sizing: border-box; 
             background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px);
             border-bottom: 1px solid #333; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
-        .user-info { 
-            font-size: 13px; color: white; max-width: 150px; 
-            overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: bold;
-        }
+        
         .nav-title {
             position: absolute; left: 50%; transform: translateX(-50%);
             font-weight: 900; color: var(--primary);
@@ -56,6 +53,13 @@
             background: var(--primary); border: none; color: black; 
             padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; 
             font-weight: bold; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* WELCOME BANNER (NEW) */
+        .welcome-banner {
+            width: 100%; text-align: center; padding: 15px 0 5px 0;
+            font-size: 14px; font-weight: bold; color: #ddd;
+            text-transform: uppercase; letter-spacing: 1px;
         }
 
         /* SOCIAL HEADER */
@@ -72,7 +76,8 @@
         .game-area { position: relative; width: 100%; height: 500px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-top: 0; flex-shrink: 0; }
         
         #cooldown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.96); z-index: 60; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
-        .timer-digits { font-size: 30px; font-family: monospace; color: var(--primary); margin: 20px 0; }
+        #cooldown-overlay h2 { font-size: 18px; color: #eee; max-width: 80%; line-height: 1.4; }
+        .timer-digits { font-size: 30px; font-family: monospace; color: var(--primary); margin: 10px 0 20px 0; }
         .reset-timer-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-top: 15px;}
 
         /* DIALECT TEXT */
@@ -329,10 +334,11 @@
 
     <div id="game-view">
         <div class="top-bar">
-            <div class="user-info"><span id="user-email-display"></span></div>
             <div class="nav-title">FantaSciuscio 2025</div>
             <button class="logout-btn" onclick="handleLogout()">ESCI</button>
         </div>
+
+        <div id="welcome-message" class="welcome-banner"></div>
 
         <div class="social-header">
             <span class="social-text">Seguici sui social:</span>
@@ -346,8 +352,9 @@
 
         <div class="game-area">
             <div id="cooldown-overlay">
-                <h2>Torna più tardi, intanto:</h2>
+                <h2>Potrai aprire un'altra busta tra un po', intanto:</h2>
                 <div id="fun-dialect-text" class="shimmer-text">...</div>
+                <div style="margin-top: 20px; font-size: 14px; color: #aaa; text-transform: uppercase;">Countdown per la prossima busta:</div>
                 <div class="timer-digits" id="timer-display">--:--:--</div>
             </div>
             <div class="flash" id="flash"></div>
@@ -375,7 +382,7 @@
         </div>
 
         <div class="accordion-container">
-            <div class="accordion-trigger" onclick="toggleAccordion('vassoio-content')">★ VASSOIO DI SUSAMIEGLIE - PUNTEGGI ★</div>
+            <div class="accordion-trigger" onclick="toggleAccordion('vassoio-content')">★ VASSOIO DI SUSAMIEGLIE ★</div>
             <div id="vassoio-content" class="accordion-content">
                 <div class="score-header">Di seguito le azioni che fanno accumulare (o tolgono) Susamieglie ai vostri Membri</div>
                 <div class="score-item"><span>Rompe lo strumento</span><span class="score-val pos">+30</span></div>
@@ -498,8 +505,18 @@
         // --- DEADLINE CONFIG ---
         const DEADLINE = new Date('2025-12-31T01:00:00').getTime();
 
-        // --- ACCORDION TOGGLE ---
+        // --- ACCORDION TOGGLE (EXCLUSIVE) ---
         function toggleAccordion(id) {
+            // Chiudi tutte le altre finestre aperte
+            const allContents = document.querySelectorAll('.accordion-content');
+            allContents.forEach(el => {
+                if (el.id !== id && el.classList.contains('open')) {
+                    el.style.maxHeight = null;
+                    el.classList.remove('open');
+                }
+            });
+
+            // Apri/Chiudi quella selezionata
             const content = document.getElementById(id);
             if (content.style.maxHeight) {
                 content.style.maxHeight = null;
@@ -646,7 +663,7 @@
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) { 
                 currentUser = session.user; 
-                document.getElementById('user-email-display').innerHTML = `<span style="color:var(--primary)">Ciao,</span> ${currentUser.email}<span style="color:var(--primary)">!</span>`;
+                document.getElementById('welcome-message').innerHTML = `Benvenuto, <span style="color:var(--primary)">${currentUser.email}</span>!`;
                 await loadDataWithTimeout(); 
             }
             else { document.getElementById('loading-screen').style.display = 'none'; document.getElementById('auth-view').style.display = 'flex'; setupAuthListener(); }
@@ -655,7 +672,7 @@
             _supabase.auth.onAuthStateChange(async (event, session) => {
                 if (event === 'SIGNED_IN' && session) { 
                     currentUser = session.user; 
-                    document.getElementById('user-email-display').innerHTML = `<span style="color:var(--primary)">Ciao,</span> ${currentUser.email}<span style="color:var(--primary)">!</span>`;
+                    document.getElementById('welcome-message').innerHTML = `Benvenuto, <span style="color:var(--primary)">${currentUser.email}</span>!`;
                     document.getElementById('auth-view').style.display = 'none'; document.getElementById('loading-screen').style.display = 'flex'; await loadDataWithTimeout(); 
                 }
                 else if (event === 'SIGNED_OUT') { window.location.reload(); }
@@ -695,7 +712,7 @@
         async function handleLogout() { localStorage.clear(); await _supabase.auth.signOut(); window.location.reload(); }
         function toggleAuthMode() { const l=document.getElementById('login-form'), r=document.getElementById('register-form'); if(getComputedStyle(l).display!=='none'){l.style.display='none';r.style.display='block';}else{l.style.display='block';r.style.display='none';} }
         function checkCooldown() { const overlay = document.getElementById('cooldown-overlay'); const pack = document.getElementById('pack'); if (!userProfile.last_opened_at) { overlay.style.display = 'none'; pack.style.display = 'block'; return; } const diff = Date.now() - new Date(userProfile.last_opened_at).getTime(); const cooldown = 3 * 60 * 60 * 1000; if (diff < cooldown) { overlay.style.display = 'flex'; pack.style.display = 'none'; startTimer(new Date(userProfile.last_opened_at).getTime() + cooldown); } else { overlay.style.display = 'none'; pack.style.display = 'block'; } }
-        function startTimer(target) { const int = setInterval(() => { const dist = target - Date.now(); if(dist < 0) { clearInterval(int); location.reload(); return; } const h = Math.floor((dist/(1000*60*60))%24), m = Math.floor((dist/(1000*60))%60), s = Math.floor((dist/1000)%60); document.getElementById('timer-display').innerText = `${h}:${m}:${s}`; }, 1000); }
+        function startTimer(target) { const int = setInterval(() => { const dist = target - Date.now(); if(dist < 0) { clearInterval(int); location.reload(); return; } const h = Math.floor((dist/(1000*60*60))%24), m = Math.floor((dist/(1000*60))%60), s = Math.floor((dist/1000)%60); document.getElementById('timer-display').innerText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; }, 1000); }
         async function debugResetTimer() { document.getElementById('loading-screen').style.display = 'flex'; await _supabase.from('profiles').update({ last_opened_at: null }).eq('id', currentUser.id); window.location.reload(); }
         
         // Particles & Deal
