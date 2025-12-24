@@ -183,6 +183,15 @@
         .rule-item strong { color: var(--primary); margin-bottom: 5px; font-size: 15px; }
         .rule-item:last-child { border-bottom: none; }
 
+        /* SCORE ITEMS */
+        .score-header { padding: 15px; text-align: center; color: #aaa; font-style: italic; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; }
+        .score-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; color: #ddd; text-align: left; }
+        .score-item:last-child { border-bottom: none; }
+        .score-item span:first-child { flex: 1; padding-right: 10px; }
+        .score-val { font-weight: 900; font-size: 15px; }
+        .score-val.pos { color: var(--success); }
+        .score-val.neg { color: var(--danger); }
+
         /* SQUAD UI INTERNALS */
         .squad-panel-inner { display: flex; flex-direction: column; align-items: center; width: 100%; padding-top: 15px; }
         .budget-bar { width: 90%; background: #222; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
@@ -308,11 +317,11 @@
         <div class="accordion-container">
             <div class="accordion-trigger" onclick="toggleAccordion('rules-content-auth')">★ LE REGOLE DEL GIOCO ★</div>
             <div id="rules-content-auth" class="accordion-content">
-                <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra. Non è obbligatorio inserire tutti e 3 i membri (puoi salvarne anche solo 1 o 2), ma ricorda: più membri hai, più punti fai! La squadra deve essere composta al massimo da: due Membri normali e un Membro raro (Capitano).</div>
+                <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra, utilizzando 3 Membri tra quelli che hai trovato nelle buste. La squadra deve essere composta da due Membri normali e un Membro raro (Capitano). Non è comunque obbligatorio inserire tutti e 3 i Membri (puoi salvarne anche solo 1 o 2).</div>
                 <div class="rule-item"><strong>2. Scadenza Mercato</strong>Hai tempo fino alle 01:00 del 31/12/2025 per modificare la tua formazione. Dopo quell'ora, il mercato chiude!</div>
-                <div class="rule-item"><strong>3. I Punti (Susamieglie)</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate.</div>
+                <div class="rule-item"><strong>3. I Susamieglie</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate. Dai un'occhiata al Vassoio di Susamieglie per saperne di più.</div>
                 <div class="rule-item"><strong>4. Il Capitano</strong>Ricorda: il capitano (Membro Raro) avrà i Susamieglie raddoppiati!</div>
-                <div class="rule-item"><strong>5. Bonus Ultra Raro</strong>Se hai pescato un Membro ultra raro inseriscilo nella squadra, la sua presenza ti darà 100 Susamieglie!</div>
+                <div class="rule-item"><strong>5. Bonus Membro Ultra Raro</strong>Se hai pescato un Membro Ultra Raro inseriscilo nella squadra, la sua presenza ti darà 100 Susamieglie!</div>
                 <div class="rule-item"><strong>6. Il Vincitore</strong>Nei giorni successivi il 31, quando avremo smaltito la sbornia, vi comunicheremo sui nostri canali social il vincitore del FantaSciuscio 2025! Eh sì, potresti essere proprio tu.</div>
             </div>
         </div>
@@ -337,7 +346,7 @@
 
         <div class="game-area">
             <div id="cooldown-overlay">
-                <h2>Puoi aprire un'altra busta tra un po', intanto:</h2>
+                <h2>Torna più tardi, intanto:</h2>
                 <div id="fun-dialect-text" class="shimmer-text">...</div>
                 <div class="timer-digits" id="timer-display">--:--:--</div>
             </div>
@@ -356,12 +365,53 @@
         <div class="accordion-container">
             <div class="accordion-trigger" onclick="toggleAccordion('rules-content-game')">★ LE REGOLE DEL GIOCO ★</div>
             <div id="rules-content-game" class="accordion-content">
-                <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra. Non è obbligatorio inserire tutti e 3 i membri (puoi salvarne anche solo 1 o 2), ma ricorda: più membri hai, più punti fai! La squadra deve essere composta al massimo da: due Membri normali e un Membro raro (Capitano).</div>
+                <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra, utilizzando 3 Membri tra quelli che hai trovato nelle buste. La squadra deve essere composta da due Membri normali e un Membro raro (Capitano). Non è comunque obbligatorio inserire tutti e 3 i Membri (puoi salvarne anche solo 1 o 2).</div>
                 <div class="rule-item"><strong>2. Scadenza Mercato</strong>Hai tempo fino alle 01:00 del 31/12/2025 per modificare la tua formazione. Dopo quell'ora, il mercato chiude!</div>
-                <div class="rule-item"><strong>3. I Punti (Susamieglie)</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate.</div>
+                <div class="rule-item"><strong>3. I Susamieglie</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate. Dai un'occhiata al Vassoio di Susamieglie per saperne di più.</div>
                 <div class="rule-item"><strong>4. Il Capitano</strong>Ricorda: il capitano (Membro Raro) avrà i Susamieglie raddoppiati!</div>
-                <div class="rule-item"><strong>5. Bonus Ultra Raro</strong>Se hai pescato un Membro ultra raro inseriscilo nella squadra, la sua presenza ti darà 100 Susamieglie!</div>
+                <div class="rule-item"><strong>5. Bonus Membro Ultra Raro</strong>Se hai pescato un Membro Ultra Raro inseriscilo nella squadra, la sua presenza ti darà 100 Susamieglie!</div>
                 <div class="rule-item"><strong>6. Il Vincitore</strong>Nei giorni successivi il 31, quando avremo smaltito la sbornia, vi comunicheremo sui nostri canali social il vincitore del FantaSciuscio 2025! Eh sì, potresti essere proprio tu.</div>
+            </div>
+        </div>
+
+        <div class="accordion-container">
+            <div class="accordion-trigger" onclick="toggleAccordion('vassoio-content')">★ VASSOIO DI SUSAMIEGLIE - PUNTEGGI ★</div>
+            <div id="vassoio-content" class="accordion-content">
+                <div class="score-header">Di seguito le azioni che fanno accumulare (o tolgono) Susamieglie ai vostri Membri</div>
+                <div class="score-item"><span>Rompe lo strumento</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Cade</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Scorda l'attacco</span><span class="score-val pos">+20</span></div>
+                <div class="score-item"><span>Non tocca alcool per tutta la giornata</span><span class="score-val neg">-30</span></div>
+                <div class="score-item"><span>Ubriaco alle undici di mattina</span><span class="score-val pos">+20</span></div>
+                <div class="score-item"><span>Stira definitivamente</span><span class="score-val neg">-40</span></div>
+                <div class="score-item"><span>Conduce un'intervista in dialetto gaetano</span><span class="score-val pos">+25</span></div>
+                <div class="score-item"><span>Si scambia gli auguri con un sacerdote</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Approccia spudoratamente una ragazza</span><span class="score-val pos">+20</span></div>
+                <div class="score-item"><span>Approcciato da una milf</span><span class="score-val pos">+80</span></div>
+                <div class="score-item"><span>Approcciato da una gilf</span><span class="score-val pos">+160</span></div>
+                <div class="score-item"><span>Fermato dalle guardie</span><span class="score-val pos">+200</span></div>
+                <div class="score-item"><span>Rapida sequenza superalcolico vino/birra superalcolico</span><span class="score-val pos">+15</span></div>
+                <div class="score-item"><span>Urla AEEE in faccia a una signora</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Fa cadere a terra una boccia d'alcool</span><span class="score-val neg">-40</span></div>
+                <div class="score-item"><span>Urla "lo sciuscio è formiano"</span><span class="score-val neg">-50</span></div>
+                <div class="score-item"><span>Indossa una coppola</span><span class="score-val pos">+5</span></div>
+                <div class="score-item"><span>Suona lo strumento dal finestrino o dal tettuccio della macchina</span><span class="score-val pos">+20</span></div>
+                <div class="score-item"><span>Indossa il papillon a pois degli sciacquapenniegl</span><span class="score-val pos">+5</span></div>
+                <div class="score-item"><span>Sciuscia con il volto coperto</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Fa un'intera sciusciata con un altro strumento</span><span class="score-val pos">+25</span></div>
+                <div class="score-item"><span>Mangia qualsiasi cosa gli venga offerta</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Esce con pornobaffo</span><span class="score-val pos">+10</span></div>
+                <div class="score-item"><span>Fa dieci flessioni a via Indipendenza bloccando il traffico</span><span class="score-val pos">+50</span></div>
+                <div class="score-item"><span>Rompe un soprammobile</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Fa una proposta di matrimonio</span><span class="score-val pos">+50</span></div>
+                <div class="score-item"><span>Fa partire un trenino</span><span class="score-val pos">+30</span></div>
+                <div class="score-item"><span>Si fa un selfie con il pubblico durante l'esibizione</span><span class="score-val pos">+20</span></div>
+                <div class="score-item"><span>Sciuscia scalzo</span><span class="score-val pos">+40</span></div>
+                <div class="score-item"><span>Sparisce per una buona mezz'ora</span><span class="score-val neg">-25</span></div>
+                <div class="score-item"><span>Sparisce proprio</span><span class="score-val neg">-50</span></div>
+                <div class="score-item"><span>Non si presenta la mattina del trentuno</span><span class="score-val pos">+100</span></div>
+                <div class="score-item"><span>Primo ad arrivare la mattina del trentuno</span><span class="score-val pos">+50</span></div>
+                <div class="score-item"><span>Ultimo ad arrivare la mattina del trentuno</span><span class="score-val neg">-30</span></div>
             </div>
         </div>
 
@@ -615,8 +665,20 @@
             document.getElementById('loading-screen').style.display = 'flex';
             try {
                 let { data, error } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-                if (!data) { await _supabase.from('profiles').insert([{ id: currentUser.id, collection: [] }]); userProfile = { collection: [], last_opened_at: null, squad: {} }; }
-                else { userProfile = data; }
+                
+                if (!data) {
+                    // SE È NUOVO: Inserisce ID, Email e Collezione vuota
+                    await _supabase.from('profiles').insert([
+                        { id: currentUser.id, email: currentUser.email, collection: [] }
+                    ]);
+                    userProfile = { collection: [], last_opened_at: null, squad: {} };
+                } else {
+                    // SE ESISTE GIÀ: Aggiorna l'email (utile se hai aggiunto la colonna dopo)
+                    if (!data.email) {
+                        await _supabase.from('profiles').update({ email: currentUser.email }).eq('id', currentUser.id);
+                    }
+                    userProfile = data;
+                }
                 
                 if(userProfile.squad) currentSquad = userProfile.squad;
                 else currentSquad = { rare: null, c1: null, c2: null, ultra: null };
@@ -651,32 +713,7 @@
         ['mousedown','touchstart'].forEach(e=>canvas.addEventListener(e,handleStart));['mousemove','touchmove'].forEach(e=>canvas.addEventListener(e,handleMove));['mouseup','touchend'].forEach(e=>window.addEventListener(e,handleEnd));
         function openPack(){ if(isOpened)return; isOpened=true; canvas.style.pointerEvents='none'; if(navigator.vibrate)navigator.vibrate(200); const rect = canvas.getBoundingClientRect(); for(let i=0;i<50;i++)particles.push(new Particle(rect.width/2,rect.height/2-50)); document.getElementById('pack').classList.add('opened'); setTimeout(()=>{document.getElementById('flash').style.opacity=1;setTimeout(()=>{document.getElementById('pack').style.display='none';document.getElementById('flash').style.opacity=0;dealCards();},200);},400); }
         async function dealCards(){ const stage=document.getElementById('cards-stage'); const isMob=window.innerWidth<600; const overlap=isMob?40:130; const commons = ALL_CARDS.filter(c => c.type === 'common'); const rares = ALL_CARDS.filter(c => c.type === 'rare'); const ultras = ALL_CARDS.filter(c => c.type === 'ultra'); const packCardsData = []; const packIdsForChecking = new Set(); while (packCardsData.length < 5) { let selectedPool; const rng = Math.random() * 100; if (rng < 74) selectedPool = commons; else if (rng < 99) selectedPool = rares; else selectedPool = ultras; const randomCard = selectedPool[Math.floor(Math.random() * selectedPool.length)]; if (!packIdsForChecking.has(randomCard.id)) { packCardsData.push(randomCard); packIdsForChecking.add(randomCard.id); } } packCardsData.forEach((c, i) => { const el=document.createElement('div'); el.className=`card-anim ${c.type}`; el.style.backgroundImage=`url('${c.img}')`; el.innerHTML=`<div class="card-name">${c.name}</div>`; const ex=-((4)*overlap)/2+(i*overlap); const ey=Math.abs(i-2)*(isMob?5:15); el.style.setProperty('--end-x',`${ex}px`); el.style.setProperty('--end-y',`${ey}px`); el.style.setProperty('--end-rot',`${(i-2)*5}deg`); el.style.setProperty('--mid-rot',`${(Math.random()*30)-15}deg`); el.style.zIndex=i; el.onclick=function(){document.querySelectorAll('.card-anim').forEach(x=>x.style.zIndex=0);this.style.zIndex=100;}; stage.appendChild(el); setTimeout(()=>el.classList.add('animate-in'),i*150); }); const newIds = packCardsData.map(c => c.id); const updated=[...(userProfile.collection||[]),...newIds]; userProfile.collection=updated; userProfile.last_opened_at=new Date().toISOString(); renderAlbum(newIds); document.getElementById('reload-btn').style.display='block'; await _supabase.from('profiles').update({collection:updated, last_opened_at: userProfile.last_opened_at}).eq('id',currentUser.id); }
-        
-        function renderAlbum(highlightIds = []) { 
-            const gridCommon = document.getElementById('grid-common'); 
-            const gridRare = document.getElementById('grid-rare'); 
-            const gridUltra = document.getElementById('grid-ultra'); 
-            gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; 
-            const col = userProfile.collection || []; 
-            document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; 
-            ALL_CARDS.forEach(c => { 
-                const count = col.filter(id => id === c.id).length; 
-                const el = document.createElement('div'); 
-                el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; 
-                if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } 
-                if(count > 0) { 
-                    el.style.backgroundImage = `url('${c.img}')`; 
-                    // Mostra costo nell'album CON "P"
-                    el.innerHTML = `<div class="count-badge">${count}</div><div class="cost-badge">P ${c.cost}</div>`;
-                    el.onclick = () => openModal(c); 
-                } else { 
-                    el.innerHTML = `<span class="slot-num">${c.id}</span>`; 
-                } 
-                if (c.type === 'ultra') gridUltra.appendChild(el); 
-                else if (c.type === 'rare') gridRare.appendChild(el); 
-                else gridCommon.appendChild(el); 
-            }); 
-        }
+        function renderAlbum(highlightIds = []) { const gridCommon = document.getElementById('grid-common'); const gridRare = document.getElementById('grid-rare'); const gridUltra = document.getElementById('grid-ultra'); gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; const col = userProfile.collection || []; document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; ALL_CARDS.forEach(c => { const count = col.filter(id => id === c.id).length; const el = document.createElement('div'); el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } if(count > 0) { el.style.backgroundImage = `url('${c.img}')`; if(count > 1) el.innerHTML = `<div class="count-badge">${count}</div>`; el.onclick = () => openModal(c); } else { el.innerHTML = `<span class="slot-num">${c.id}</span>`; } if (c.type === 'ultra') gridUltra.appendChild(el); else if (c.type === 'rare') gridRare.appendChild(el); else gridCommon.appendChild(el); }); }
         function openModal(card) { const m = document.getElementById('card-modal'); const c = document.getElementById('modal-card-visual'); c.style.backgroundImage = `url('${card.img}')`; c.className = `modal-content ${card.type}`; m.style.display = 'flex'; }
         function closeModal() { document.getElementById('card-modal').style.display='none'; }
     </script>
