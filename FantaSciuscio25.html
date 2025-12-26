@@ -213,14 +213,11 @@
         .budget-info { font-size: 14px; color: #aaa; text-transform: uppercase; font-weight: bold; }
         .budget-val { font-size: 24px; font-weight: bold; color: var(--success); }
         .budget-val.low { color: var(--danger); }
-        
-        /* MODIFICATO: RIMOSSO BORDO E SFONDO */
         .squad-deadline-box { 
             font-size: 12px; color: var(--primary); font-weight: bold; text-align: center; 
             box-sizing: border-box; line-height: 1.4; 
             text-transform: uppercase;
         }
-        
         .squad-grid { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
         .squad-row { display: flex; gap: 15px; justify-content: center; }
         
@@ -371,7 +368,7 @@
             </div>
         </div>
         
-        <div class="app-footer">FantaSciuscio - è un'idea de Glie Sciacquapenniegl.<br>Ver. 1.5</div>
+        <div class="app-footer">FantaSciuscio - è un'idea di Glie Sciacquapenniegl.<br>Ver. 1.1</div>
     </div>
 
     <div id="game-view">
@@ -518,7 +515,7 @@
             <div class="album-grid" id="grid-common"></div>
         </div>
         
-        <div class="app-footer">FantaSciuscio - è un'idea de Glie Sciacquapenniegl.<br>Ver. 1.5</div>
+        <div class="app-footer">FantaSciuscio - è un'idea di Glie Sciacquapenniegl.<br>Ver. 1.1</div>
     </div>
 
     <script>
@@ -851,45 +848,9 @@
         ['mousedown','touchstart'].forEach(e=>canvas.addEventListener(e,handleStart));['mousemove','touchmove'].forEach(e=>canvas.addEventListener(e,handleMove));['mouseup','touchend'].forEach(e=>window.addEventListener(e,handleEnd));
         function openPack(){ if(isOpened)return; isOpened=true; canvas.style.pointerEvents='none'; if(navigator.vibrate)navigator.vibrate(200); const rect = canvas.getBoundingClientRect(); for(let i=0;i<50;i++)particles.push(new Particle(rect.width/2,rect.height/2-50)); document.getElementById('pack').classList.add('opened'); setTimeout(()=>{document.getElementById('flash').style.opacity=1;setTimeout(()=>{document.getElementById('pack').style.display='none';document.getElementById('flash').style.opacity=0;dealCards();},200);},400); }
         async function dealCards(){ const stage=document.getElementById('cards-stage'); const isMob=window.innerWidth<600; const overlap=isMob?40:130; const commons = ALL_CARDS.filter(c => c.type === 'common'); const rares = ALL_CARDS.filter(c => c.type === 'rare'); const ultras = ALL_CARDS.filter(c => c.type === 'ultra'); const packCardsData = []; const packIdsForChecking = new Set(); while (packCardsData.length < 5) { let selectedPool; const rng = Math.random() * 100; if (rng < 74) selectedPool = commons; else if (rng < 99) selectedPool = rares; else selectedPool = ultras; const randomCard = selectedPool[Math.floor(Math.random() * selectedPool.length)]; if (!packIdsForChecking.has(randomCard.id)) { packCardsData.push(randomCard); packIdsForChecking.add(randomCard.id); } } packCardsData.forEach((c, i) => { const el=document.createElement('div'); el.className=`card-anim ${c.type}`; el.style.backgroundImage=`url('${c.img}')`; el.innerHTML=`<div class="card-name">${c.name}</div>`; const ex=-((4)*overlap)/2+(i*overlap); const ey=Math.abs(i-2)*(isMob?5:15); el.style.setProperty('--end-x',`${ex}px`); el.style.setProperty('--end-y',`${ey}px`); el.style.setProperty('--end-rot',`${(i-2)*5}deg`); el.style.setProperty('--mid-rot',`${(Math.random()*30)-15}deg`); el.style.zIndex=i; el.onclick=function(){document.querySelectorAll('.card-anim').forEach(x=>x.style.zIndex=0);this.style.zIndex=100;}; stage.appendChild(el); setTimeout(()=>el.classList.add('animate-in'),i*150); }); const newIds = packCardsData.map(c => c.id); const updated=[...(userProfile.collection||[]),...newIds]; userProfile.collection=updated; userProfile.last_opened_at=new Date().toISOString(); renderAlbum(newIds); document.getElementById('reload-btn').style.display='block'; await _supabase.from('profiles').update({collection:updated, last_opened_at: userProfile.last_opened_at}).eq('id',currentUser.id); }
-        
-        function renderAlbum(highlightIds = []) { 
-            const gridCommon = document.getElementById('grid-common'); 
-            const gridRare = document.getElementById('grid-rare'); 
-            const gridUltra = document.getElementById('grid-ultra'); 
-            gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; 
-            const col = userProfile.collection || []; 
-            document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; 
-            ALL_CARDS.forEach(c => { 
-                const count = col.filter(id => id === c.id).length; 
-                const el = document.createElement('div'); 
-                el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; 
-                if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } 
-                if(count > 0) { 
-                    el.style.backgroundImage = `url('${c.img}')`; 
-                    // Mostra costo nell'album CON "P"
-                    el.innerHTML = `<div class="count-badge">${count}</div><div class="cost-badge">P ${c.cost}</div>`;
-                    el.onclick = () => openModal(c); 
-                } else { 
-                    el.innerHTML = `<span class="slot-num">${c.id}</span>`; 
-                } 
-                if (c.type === 'ultra') gridUltra.appendChild(el); 
-                else if (c.type === 'rare') gridRare.appendChild(el); 
-                else gridCommon.appendChild(el); 
-            }); 
-        }
-        function openModal(card) { 
-            const m = document.getElementById('card-modal'); 
-            const c = document.getElementById('modal-card-visual'); 
-            const d = document.getElementById('modal-description');
-            
-            c.style.backgroundImage = `url('${card.img}')`; 
-            c.className = `modal-content ${card.type}`; 
-            
-            // Aggiungo il costo (ROSSO SCURO) e la descrizione
-            d.innerHTML = `<div style="margin-bottom:10px; font-weight:900; color:#b30000; font-size:16px;">COSTO: ${card.cost} P</div>${card.description}`;
-            
-            m.style.display = 'flex'; 
-        }
+        function renderAlbum(highlightIds = []) { const gridCommon = document.getElementById('grid-common'); const gridRare = document.getElementById('grid-rare'); const gridUltra = document.getElementById('grid-ultra'); gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; const col = userProfile.collection || []; document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; ALL_CARDS.forEach(c => { const count = col.filter(id => id === c.id).length; const el = document.createElement('div'); el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } if(count > 0) { el.style.backgroundImage = `url('${c.img}')`; if(count > 1) el.innerHTML = `<div class="count-badge">${count}</div>`; el.onclick = () => openModal(c); } else { el.innerHTML = `<span class="slot-num">${c.id}</span>`; } if (c.type === 'ultra') gridUltra.appendChild(el); else if (c.type === 'rare') gridRare.appendChild(el); else gridCommon.appendChild(el); }); }
+        function openModal(card) { const m = document.getElementById('card-modal'); const c = document.getElementById('modal-card-visual'); c.style.backgroundImage = `url('${card.img}')`; c.className = `modal-content ${card.type}`; 
+        const d = document.getElementById('modal-description'); d.innerHTML = `<div style="margin-bottom:10px; font-weight:900; color:#b30000; font-size:16px;">COSTO: ${card.cost} P</div>${card.description}`; m.style.display = 'flex'; }
         function closeModal() { document.getElementById('card-modal').style.display='none'; }
     </script>
 </body>
