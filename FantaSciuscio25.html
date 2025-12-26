@@ -30,9 +30,19 @@
         .link-text { margin-top: 25px; font-size: 14px; color: #fff; cursor: pointer; text-decoration: underline; font-weight: bold; opacity: 0.9; transition: opacity 0.2s; }
         .link-text:hover { opacity: 1; color: var(--primary); }
         .error-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; background: rgba(255,0,0,0.1); padding: 5px; border-radius: 4px; }
+        
+        /* PRIVACY TEXT */
+        .privacy-text { font-size: 11px; color: #aaa; margin-top: 20px; line-height: 1.4; font-style: italic; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+
+        /* FOOTER */
+        .app-footer {
+            margin-top: 40px; margin-bottom: 20px; padding: 10px;
+            text-align: center; color: #555; font-size: 11px; 
+            text-transform: uppercase; letter-spacing: 1px; width: 100%;
+        }
 
         /* GAME UI LAYOUT */
-        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 60px; padding-bottom: 50px; }
+        #game-view { display: none; width: 100%; flex-direction: column; align-items: center; padding-top: 60px; padding-bottom: 20px; }
         
         /* TOP BAR FIXED */
         .top-bar { 
@@ -55,7 +65,7 @@
             font-weight: bold; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
         }
 
-        /* WELCOME BANNER (NEW) */
+        /* WELCOME BANNER */
         .welcome-banner {
             width: 100%; text-align: center; padding: 15px 0 5px 0;
             font-size: 14px; font-weight: bold; color: #ddd;
@@ -203,6 +213,14 @@
         .budget-info { font-size: 14px; color: #aaa; text-transform: uppercase; font-weight: bold; }
         .budget-val { font-size: 24px; font-weight: bold; color: var(--success); }
         .budget-val.low { color: var(--danger); }
+        
+        /* MODIFICATO: RIMOSSO BORDO E SFONDO */
+        .squad-deadline-box { 
+            font-size: 12px; color: var(--primary); font-weight: bold; text-align: center; 
+            box-sizing: border-box; line-height: 1.4; 
+            text-transform: uppercase;
+        }
+        
         .squad-grid { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; }
         .squad-row { display: flex; gap: 15px; justify-content: center; }
         
@@ -262,12 +280,31 @@
         .count-badge { position: absolute; top: -5px; right: -5px; background: var(--gold); color: black; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; justify-content: center; align-items: center; }
 
         /* MODAL */
-        #card-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        #card-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-content { position: relative; width: 300px; height: 440px; background: #fff; border-radius: 15px; background-size: cover; background-position: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); transform: scale(0.8); animation: popIn 0.3s forwards; border: 5px solid white; display: flex; flex-direction: column; }
         .modal-content.rare { border-color: var(--gold); box-shadow: 0 0 30px var(--gold); }
         .modal-content.ultra { border-color: var(--ultra); box-shadow: 0 0 40px var(--ultra); }
         @keyframes popIn { to { transform: scale(1); } }
         .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 4001; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        
+        /* DESCRIPTION IN MODAL */
+        .modal-desc-box {
+            background: rgba(255, 255, 255, 0.95);
+            color: #000;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            animation: slideUp 0.4s forwards;
+            opacity: 0; transform: translateY(20px);
+        }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
         #reload-btn { padding: 10px 20px; background: var(--primary); border:none; color: black; font-weight: bold; border-radius: 20px; cursor: pointer; display: none; position: absolute; bottom: 20px; z-index: 100; box-shadow: 0 0 15px rgba(255,215,0,0.6); text-transform: uppercase; }
 
         /* SELECTION MODAL */
@@ -288,6 +325,7 @@
     <div id="card-modal" onclick="closeModal()">
         <div class="close-modal">&times;</div>
         <div class="modal-content" id="modal-card-visual"></div>
+        <div class="modal-desc-box" id="modal-description"></div>
     </div>
 
     <div id="selection-modal">
@@ -309,6 +347,7 @@
             <div class="error-msg" id="l-error"></div>
             <button class="primary-btn" onclick="handleLogin()">Entra</button>
             <div class="link-text" onclick="toggleAuthMode()">Se non ti sei registrato, registrati!</div>
+            <div class="privacy-text">I tuoi dati verranno utilizzati ESCLUSIVAMENTE per il tuo profilo nel gioco del FantaSciuscio. No newsletter, no fuffaguru, no baffone. Solo per accedere al gioco.</div>
         </div>
         <div id="register-form" class="auth-box" style="display:none;">
             <h1 class="main-title">FantaSciuscio 2025</h1>
@@ -318,11 +357,11 @@
             <div class="error-msg" id="r-error"></div>
             <button class="primary-btn" onclick="handleRegister()">Crea Account</button>
             <div class="link-text" onclick="toggleAuthMode()">Hai già un account? Accedi</div>
+            <div class="privacy-text">I tuoi dati verranno utilizzati ESCLUSIVAMENTE per il tuo profilo nel gioco del FantaSciuscio. No newsletter, no fuffaguru, no baffone. Solo per accedere al gioco.</div>
         </div>
         <div class="accordion-container">
             <div class="accordion-trigger" onclick="toggleAccordion('rules-content-auth')">★ LE REGOLE DEL GIOCO ★</div>
             <div id="rules-content-auth" class="accordion-content">
-                <div class="rule-item"><strong>0. Colleziona i Membri</strong>Sbusta ogni 3 ore e prendi tutti i Membri che puoi. Più bustine apri e più possibilità avrai di prendere Membri Rari e Ultra Rari.</div>
                 <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra, utilizzando 3 Membri tra quelli che hai trovato nelle buste. La squadra deve essere composta da due Membri normali e un Membro raro (Capitano). Non è comunque obbligatorio inserire tutti e 3 i Membri (puoi salvarne anche solo 1 o 2).</div>
                 <div class="rule-item"><strong>2. Scadenza Mercato</strong>Hai tempo fino alle 01:00 del 31/12/2025 per modificare la tua formazione. Dopo quell'ora, il mercato chiude!</div>
                 <div class="rule-item"><strong>3. I Susamieglie</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate. Dai un'occhiata al Vassoio di Susamieglie per saperne di più.</div>
@@ -331,6 +370,8 @@
                 <div class="rule-item"><strong>6. Il Vincitore</strong>Nei giorni successivi il 31, quando avremo smaltito la sbornia, vi comunicheremo sui nostri canali social il vincitore del FantaSciuscio 2025! Eh sì, potresti essere proprio tu.</div>
             </div>
         </div>
+        
+        <div class="app-footer">FantaSciuscio - è un'idea de Glie Sciacquapenniegl.<br>Ver. 1.5</div>
     </div>
 
     <div id="game-view">
@@ -373,7 +414,6 @@
         <div class="accordion-container">
             <div class="accordion-trigger" onclick="toggleAccordion('rules-content-game')">★ LE REGOLE DEL GIOCO ★</div>
             <div id="rules-content-game" class="accordion-content">
-                <div class="rule-item"><strong>0. Colleziona i Membri</strong>Sbusta ogni 3 ore e prendi tutti i Membri che puoi. Più bustine apri e più possibilità avrai di prendere Membri Rari e Ultra Rari.</div>
                 <div class="rule-item"><strong>1. Crea la tua Squadra</strong>Hai un budget di 15 Pennelli (crediti) per comporre la tua squadra, utilizzando 3 Membri tra quelli che hai trovato nelle buste. La squadra deve essere composta da due Membri normali e un Membro raro (Capitano). Non è comunque obbligatorio inserire tutti e 3 i Membri (puoi salvarne anche solo 1 o 2).</div>
                 <div class="rule-item"><strong>2. Scadenza Mercato</strong>Hai tempo fino alle 01:00 del 31/12/2025 per modificare la tua formazione. Dopo quell'ora, il mercato chiude!</div>
                 <div class="rule-item"><strong>3. I Susamieglie</strong>Durante la giornata del 31 i tuoi Membri accumuleranno Susamieglie (punti) effettuando azioni perlopiù sconsiderate. Dai un'occhiata al Vassoio di Susamieglie per saperne di più.</div>
@@ -426,6 +466,8 @@
 
         <div class="accordion-container">
             <div class="accordion-trigger" onclick="toggleAccordion('squad-content')">★ CREA LA TUA SQUADRA ★</div>
+            <div id="squad-countdown" class="squad-deadline-box" style="margin: 5px 0 10px 0; width:100%;"></div>
+            
             <div id="squad-content" class="accordion-content">
                 <div class="squad-panel-inner">
                     <div class="budget-bar">
@@ -464,7 +506,7 @@
         </div>
 
         <div class="album-section">
-            <h3 style="border-bottom:1px solid #333; padding-bottom:10px;">La tua Collezione: <span id="stats"></span></h3>
+            <h3 style="border-bottom:1px solid #333; padding-bottom:10px;">La tua Collezione: <span id="stats"></span> - clicca sulle carte per scoprire i superpoteri</h3>
             
             <div class="album-title" style="color: #e056fd;">★ MEMBRI SPECIALI ULTRA RARI</div>
             <div class="album-grid" id="grid-ultra"></div>
@@ -475,6 +517,8 @@
             <div class="album-title">MEMBRI NORMALI</div>
             <div class="album-grid" id="grid-common"></div>
         </div>
+        
+        <div class="app-footer">FantaSciuscio - è un'idea de Glie Sciacquapenniegl.<br>Ver. 1.5</div>
     </div>
 
     <script>
@@ -488,13 +532,65 @@
         // Mappa costi definita (ID 1-15)
         const COSTS_MAP = {1:10, 2:4, 3:6, 4:3, 5:1, 6:7, 7:9, 8:5, 9:4, 10:10, 11:1, 12:9, 13:5, 14:3, 15:2};
 
+        // DESCRIZIONI DEI SUPERPOTERI (MAPPA ID -> TESTO)
+        const DESCRIPTIONS = {
+            1: "Il confine che separa il suo stato di sobrietà dall'ebbrezza è talmente indecifrabile che si fa a fatica a capire se già con il prosecco delle dieci è andato via. Torna dopo un anno di assenza, performance assicurata.<br><br><strong>Abilità:</strong> Lerciata immediata, Molestia easy.",
+            2: "Sempre cordiale e pacato, il Comandante è forse l'unico che il 31 riesce a preservare la sua compostezza e a garantire che il tasso medio di dignità del gruppo possegga i requisiti minimi per la decenza. Dalle 18 in poi se volete contattare Glie Sciacquapenniegl chiamate lui.<br><br><strong>Abilità:</strong> Baffo pornoreattivo, Pennello sociale.",
+            3: "Il 'più bello del gruppo' come lui si autodefinisce con estrema umiltà, negli anni scorsi ha dimostrato il suo enorme eroismo venendo a sciusciare dopo un'intera nottata passata in bianco. Proprio lui che in bianco non va mai.<br><br><strong>Abilità:</strong> Precisione svizzera, Harem strabordante.",
+            4: "Presenza scenica di Dario Fo e timbro di un doppiatore dei Simpson, Danny Sax torna ad allietare grandi e piccini con il suo inconfondibile baritono. Il suo genio e la sua risata sono elementi di cui uno sciuscio non può fare a meno.<br><br><strong>Abilità:</strong> Simpatia coinvolgente, Sregolatezza mascherata.",
+            5: "Direttamente dalle lande sconfinate dell'est, Zarina vuole dimostrare a tutti la potenza indecifrabile della contagiosità dello sciuscio gaetano. Ritorna alla grande su questi schermi, con la consapevolezza che la sua prestazione farà parlare di sé.<br><br><strong>Abilità:</strong> White Tamburella, Impassibile alla Vodka.",
+            6: "Nonostante non abbia mai studiato musica riesce comunque a centrare con le due mazzette che ha in mano l'enorme grancassa che si porta appresso. Solitamente calmo e tranquillo, l'ultimo giorno dell'anno il rispettabile dottor Jekyll si trasforma in un Mr. Hyde alcolizzato.<br><br><strong>Abilità:</strong> Stamina infinita, Allucco facile.",
+            7: "Quell’urzo è una sua creatura e lui solo riesce a ricavarne quei “vrumm” così potenti da far tremare porte e finestre. C'è chi giura di aver sentito i suoi 'Aeeee' echeggiare per via Indipendenza 3 giorni dopo capodanno.<br><br><strong>Abilità:</strong> Dialetto perfetto, Veracità autentica.",
+            8: "Spesso capita che il suo tasso di adrenalina superi il valore di soglia e allora è possibile apprezzarlo mentre sbiascica becere espressioni dialettali. Riesce a guidare il gruppo anche da ubriaco.<br><br><strong>Abilità:</strong> Polistrumentista incarognito, Leadership indiscussa.",
+            9: "Le sue prestazioni migliorano alla distanza proporzionalmente ai centerbe mandati giù, tanto che alla sera finisce per suonare con un solo polmone, a mezza bocca e con gli occhi chiusi. Molti attacchi li dà lui, quindi può decidere liberamente se continuare l'esibizione o interromperla randomicamente.<br><br><strong>Abilità:</strong> Imprevedibilità storica, Entusiasmo contagioso.",
+            10: "Faccia da picciotto siciliano e animo da gaetano vissuto, quel trombone di Pippo suona in scioltezza in ogni tipo di contesto. Unico e inimitabile nel far scomparire fette di panettone e bicchieri di vino rosso, non lascia nulla al caso, al massimo lo mangia.<br><br><strong>Abilità:</strong> Fegato ferreo, Intraprendenza magistrale.",
+            11: "Il Martellaio Matto, ormai in pianta stabile nella formazione degli Sciacquapenniegl, invoca per tutto l'anno l'intercessione di Thor affinché i suoi Tac Tac si odano da Calegna fino abbasc' Serapo. Combina dolcezza a rudezza, la sua mano può esse piuma o può esse ferro.<br><br><strong>Abilità:</strong> Martello incandescente, Mario Brega.",
+            12: "La saga di Daft Piaja continua. Dopo aver lasciato con il fiato sospeso i suoi fans, Benedetto è uscito allo scoperto e si è rivelato ai più. All'esordio con il suo pesce in mano ha fatto grandi cose: Gaeta vuole il bis.<br><br><strong>Abilità:</strong> Scuorno inesistente, Pesce profumato.",
+            13: "Ignoranza e professionalità al servizio degli Sciacquapenniegl. I suoi studi in conservatorio sono un valore aggiunto, ma non peseranno mai quanto il quintale di fomento che porta con sè ogni anno!<br><br><strong>Abilità:</strong> Resistenza alcolica, Carpenteria elettronica.",
+            14: "Sguardo penetrante e garra charrua rendono Brazo in assoluto il pennello più cazzimmoso. Ha il ritmo nel sangue, oltre all'alcool, e le sue maracas lo sanno bene. Chissà se riuscirà a ripetere la prestazione dello scorso anno o se a mezzogiorno lo troverete ancora lucido.<br><br><strong>Abilità:</strong> Occhi spaccanti, Shakeramento imperterrito.",
+            15: "Conosce tutta la storia di Gaeta, da Carlo di Borbone a Mimino dell'Arcella, e non si stanca mai di ripeterla. Immenso cultore della sua città, è pronto a dedicarle una sciusciata piena di sentimento e passione. Encomiato a dovere dalla Pro Loco, il custode della città è carico a palla per l'evento che aspetta 364 giorni l'anno.<br><br><strong>Abilità:</strong> Stereo incorporato, Urzo fumante.",
+            
+            // ULTRA RARI (31, 32, 33)
+            31: "E per Padron Enrico: hip hip urrà! Il proprietario dell'Antico Forno ha sempre un pensiero per gli affamati e bisognosi: è pronta na sartana con 100 Susamieglie appena sfornati che porterà la tua squadra alla vittoria!",
+            32: "Babbo Dodo is coming to town! Aprite le...porte e le finestre e sturate i camini, è arrivato un carico di 100 Susamieglie tutti per voi",
+            33: "Gli manca solo la fascia, ma il vero sindaco di Gaeta è chiaramente lui, acclamato a furor di popolo è pronto a prendere il potere. La sua prima manovra di governo è chiara: reddito di cittadinanza a tutti i gaetani, 100 Susamieglie apr'ome!"
+        };
+
         const ALL_CARDS = [];
         // Costo Comuni: DA MAPPA
-        for(let i=1; i<=15; i++) ALL_CARDS.push({ id: i, name: `Membro ${i}`, type: 'common', cost: COSTS_MAP[i], img: `${STORAGE_BASE_URL}comune_${i}.png` });
+        for(let i=1; i<=15; i++) {
+            ALL_CARDS.push({ 
+                id: i, 
+                name: `Membro ${i}`, 
+                type: 'common', 
+                cost: COSTS_MAP[i], 
+                img: `${STORAGE_BASE_URL}comune_${i}.png`,
+                description: DESCRIPTIONS[i] || "Superpotere segreto ancora da svelare..."
+            });
+        }
         // Costo Rari: DA MAPPA
-        for(let i=1; i<=15; i++) ALL_CARDS.push({ id: i+15, name: `Membro Raro ${i}`, type: 'rare', cost: COSTS_MAP[i], img: `${STORAGE_BASE_URL}rare_${i}.png` });
+        for(let i=1; i<=15; i++) {
+            let descId = i; // Usa la descrizione del personaggio base
+            ALL_CARDS.push({ 
+                id: i+15, 
+                name: `Membro Raro ${i}`, 
+                type: 'rare', 
+                cost: COSTS_MAP[i], 
+                img: `${STORAGE_BASE_URL}rare_${i}.png`,
+                description: DESCRIPTIONS[descId] || "Superpotere segreto ancora da svelare... ma RADDOPPIATO!"
+            });
+        }
         // Costo Ultra: 0
-        for(let i=1; i<=3; i++) ALL_CARDS.push({ id: i+30, name: `Membro Speciale ${i}`, type: 'ultra', cost: 0, img: `${STORAGE_BASE_URL}ultra_${i}.png` });
+        for(let i=1; i<=3; i++) {
+            ALL_CARDS.push({ 
+                id: i+30, 
+                name: `Membro Speciale ${i}`, 
+                type: 'ultra', 
+                cost: 0, 
+                img: `${STORAGE_BASE_URL}ultra_${i}.png`,
+                description: DESCRIPTIONS[i+30]
+            });
+        }
 
         let currentUser = null;
         let userProfile = null;
@@ -505,11 +601,10 @@
         let activeSlot = null; // { type, index }
 
         // --- DEADLINE CONFIG ---
-        const DEADLINE = new Date('2025-12-31T01:00:00').getTime();
+        const DEADLINE = new Date('2025-12-30T23:59:59').getTime();
 
         // --- ACCORDION TOGGLE (EXCLUSIVE) ---
         function toggleAccordion(id) {
-            // Chiudi tutte le altre finestre aperte
             const allContents = document.querySelectorAll('.accordion-content');
             allContents.forEach(el => {
                 if (el.id !== id && el.classList.contains('open')) {
@@ -518,7 +613,6 @@
                 }
             });
 
-            // Apri/Chiudi quella selezionata
             const content = document.getElementById(id);
             if (content.style.maxHeight) {
                 content.style.maxHeight = null;
@@ -527,6 +621,31 @@
                 content.classList.add('open');
                 content.style.maxHeight = content.scrollHeight + "px";
             }
+        }
+
+        // --- MARKET COUNTDOWN ---
+        function startMarketTimer() {
+            setInterval(() => {
+                const now = Date.now();
+                const dist = DEADLINE - now;
+                const el = document.getElementById('squad-countdown');
+                if(!el) return;
+
+                if(dist < 0) {
+                    el.innerText = "MERCATO CHIUSO";
+                    el.style.color = "var(--danger)";
+                    // Force refresh button state
+                    renderSquadUI();
+                    return;
+                }
+
+                const d = Math.floor(dist / (1000 * 60 * 60 * 24));
+                const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((dist % (1000 * 60)) / 1000);
+
+                el.innerHTML = `Hai ancora.... <br><span style="font-size:14px; color:white;">${d}g ${h}h ${m}m ${s}s</span><br> per creare la tua squadra`;
+            }, 1000);
         }
 
         // --- SQUAD LOGIC (VALIDAZIONE RIGIDA) ---
@@ -704,7 +823,7 @@
 
                 document.getElementById('game-view').style.display = 'flex';
                 document.getElementById('loading-screen').style.display = 'none';
-                resize(); renderAlbum(); checkCooldown(); renderSquadUI();
+                resize(); renderAlbum(); checkCooldown(); renderSquadUI(); startMarketTimer();
             } catch (e) { console.error(e); location.reload(); }
         }
 
@@ -732,8 +851,45 @@
         ['mousedown','touchstart'].forEach(e=>canvas.addEventListener(e,handleStart));['mousemove','touchmove'].forEach(e=>canvas.addEventListener(e,handleMove));['mouseup','touchend'].forEach(e=>window.addEventListener(e,handleEnd));
         function openPack(){ if(isOpened)return; isOpened=true; canvas.style.pointerEvents='none'; if(navigator.vibrate)navigator.vibrate(200); const rect = canvas.getBoundingClientRect(); for(let i=0;i<50;i++)particles.push(new Particle(rect.width/2,rect.height/2-50)); document.getElementById('pack').classList.add('opened'); setTimeout(()=>{document.getElementById('flash').style.opacity=1;setTimeout(()=>{document.getElementById('pack').style.display='none';document.getElementById('flash').style.opacity=0;dealCards();},200);},400); }
         async function dealCards(){ const stage=document.getElementById('cards-stage'); const isMob=window.innerWidth<600; const overlap=isMob?40:130; const commons = ALL_CARDS.filter(c => c.type === 'common'); const rares = ALL_CARDS.filter(c => c.type === 'rare'); const ultras = ALL_CARDS.filter(c => c.type === 'ultra'); const packCardsData = []; const packIdsForChecking = new Set(); while (packCardsData.length < 5) { let selectedPool; const rng = Math.random() * 100; if (rng < 74) selectedPool = commons; else if (rng < 99) selectedPool = rares; else selectedPool = ultras; const randomCard = selectedPool[Math.floor(Math.random() * selectedPool.length)]; if (!packIdsForChecking.has(randomCard.id)) { packCardsData.push(randomCard); packIdsForChecking.add(randomCard.id); } } packCardsData.forEach((c, i) => { const el=document.createElement('div'); el.className=`card-anim ${c.type}`; el.style.backgroundImage=`url('${c.img}')`; el.innerHTML=`<div class="card-name">${c.name}</div>`; const ex=-((4)*overlap)/2+(i*overlap); const ey=Math.abs(i-2)*(isMob?5:15); el.style.setProperty('--end-x',`${ex}px`); el.style.setProperty('--end-y',`${ey}px`); el.style.setProperty('--end-rot',`${(i-2)*5}deg`); el.style.setProperty('--mid-rot',`${(Math.random()*30)-15}deg`); el.style.zIndex=i; el.onclick=function(){document.querySelectorAll('.card-anim').forEach(x=>x.style.zIndex=0);this.style.zIndex=100;}; stage.appendChild(el); setTimeout(()=>el.classList.add('animate-in'),i*150); }); const newIds = packCardsData.map(c => c.id); const updated=[...(userProfile.collection||[]),...newIds]; userProfile.collection=updated; userProfile.last_opened_at=new Date().toISOString(); renderAlbum(newIds); document.getElementById('reload-btn').style.display='block'; await _supabase.from('profiles').update({collection:updated, last_opened_at: userProfile.last_opened_at}).eq('id',currentUser.id); }
-        function renderAlbum(highlightIds = []) { const gridCommon = document.getElementById('grid-common'); const gridRare = document.getElementById('grid-rare'); const gridUltra = document.getElementById('grid-ultra'); gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; const col = userProfile.collection || []; document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; ALL_CARDS.forEach(c => { const count = col.filter(id => id === c.id).length; const el = document.createElement('div'); el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } if(count > 0) { el.style.backgroundImage = `url('${c.img}')`; if(count > 1) el.innerHTML = `<div class="count-badge">${count}</div>`; el.onclick = () => openModal(c); } else { el.innerHTML = `<span class="slot-num">${c.id}</span>`; } if (c.type === 'ultra') gridUltra.appendChild(el); else if (c.type === 'rare') gridRare.appendChild(el); else gridCommon.appendChild(el); }); }
-        function openModal(card) { const m = document.getElementById('card-modal'); const c = document.getElementById('modal-card-visual'); c.style.backgroundImage = `url('${card.img}')`; c.className = `modal-content ${card.type}`; m.style.display = 'flex'; }
+        
+        function renderAlbum(highlightIds = []) { 
+            const gridCommon = document.getElementById('grid-common'); 
+            const gridRare = document.getElementById('grid-rare'); 
+            const gridUltra = document.getElementById('grid-ultra'); 
+            gridCommon.innerHTML = ''; gridRare.innerHTML = ''; gridUltra.innerHTML = ''; 
+            const col = userProfile.collection || []; 
+            document.getElementById('stats').innerText = `${new Set(col).size}/${ALL_CARDS.length}`; 
+            ALL_CARDS.forEach(c => { 
+                const count = col.filter(id => id === c.id).length; 
+                const el = document.createElement('div'); 
+                el.className = `album-slot ${count > 0 ? 'owned' : ''} ${c.type}`; 
+                if(highlightIds.includes(c.id)) { el.classList.add('just-found'); } 
+                if(count > 0) { 
+                    el.style.backgroundImage = `url('${c.img}')`; 
+                    // Mostra costo nell'album CON "P"
+                    el.innerHTML = `<div class="count-badge">${count}</div><div class="cost-badge">P ${c.cost}</div>`;
+                    el.onclick = () => openModal(c); 
+                } else { 
+                    el.innerHTML = `<span class="slot-num">${c.id}</span>`; 
+                } 
+                if (c.type === 'ultra') gridUltra.appendChild(el); 
+                else if (c.type === 'rare') gridRare.appendChild(el); 
+                else gridCommon.appendChild(el); 
+            }); 
+        }
+        function openModal(card) { 
+            const m = document.getElementById('card-modal'); 
+            const c = document.getElementById('modal-card-visual'); 
+            const d = document.getElementById('modal-description');
+            
+            c.style.backgroundImage = `url('${card.img}')`; 
+            c.className = `modal-content ${card.type}`; 
+            
+            // Aggiungo il costo (ROSSO SCURO) e la descrizione
+            d.innerHTML = `<div style="margin-bottom:10px; font-weight:900; color:#b30000; font-size:16px;">COSTO: ${card.cost} P</div>${card.description}`;
+            
+            m.style.display = 'flex'; 
+        }
         function closeModal() { document.getElementById('card-modal').style.display='none'; }
     </script>
 </body>
